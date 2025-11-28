@@ -1,12 +1,12 @@
-import { useParams } from 'react-router-dom';
 import styles from './styles.module.css';
+import { CommentsList } from '../../components/commentsList';
+import { CommentForm } from '../../components/forms/newComment';
 
 export const Comments = () => {
-    const {postId} = useParams();
-
     return (
         <div className={styles.wrap}>
-            {postId}
+            <CommentsList />
+            <CommentForm />
         </div>
     );
 }

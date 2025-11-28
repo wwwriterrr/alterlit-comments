@@ -5,15 +5,19 @@ import {
 } from 'react-router-dom';
 import './App.css'
 import { Comments } from './pages/index';
+import { Provider } from 'react-redux';
+import { store } from './services/store';
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/post/:postId/" element={<Comments />} />
-                <Route path="*" element={<>404</>} />
-            </Routes>
-        </BrowserRouter>
+        <Provider store={store}>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/post/:postId/" element={<Comments />} />
+                    <Route path="*" element={<>404</>} />
+                </Routes>
+            </BrowserRouter>
+        </Provider>
     )
 }
 
