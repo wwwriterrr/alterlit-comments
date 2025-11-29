@@ -1,6 +1,10 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ApiURL } from "../../core/constants";
 import { setComments } from "./slice";
+
+export const commentsWsConnect = createAction<string, 'FEED_CONNECT'>('FEED_CONNECT');
+
+export const commentsWsDisconnect = createAction('FEED_DISCONNECT');
 
 export const CommentsFetch = createAsyncThunk(
     'comments/fetch',
@@ -26,3 +30,5 @@ export const CommentsFetch = createAsyncThunk(
         }
     }
 );
+
+export type TCommentsWsExternalActions = ReturnType<typeof commentsWsConnect> | ReturnType<typeof commentsWsDisconnect>;

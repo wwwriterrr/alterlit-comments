@@ -189,7 +189,7 @@ body {
     background-color: var(--color-0);
 }
 
-body::before {
+/* body::before {
     content: '';
     position: fixed;
     z-index: 1;
@@ -198,7 +198,7 @@ body::before {
     width: var(--aside-width);
     height: 100%;
     background-color: var(--color-1);
-}
+} */
 
 ul {
     list-style: none;

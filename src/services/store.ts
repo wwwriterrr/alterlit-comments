@@ -1,7 +1,34 @@
 import { combineReducers, configureStore, type Reducer, type ThunkDispatch } from '@reduxjs/toolkit';
 import AuthSlice, { type TAuthInternalActions } from './auth/slice';
-import { useDispatch, useSelector, useStore } from 'react-redux';
-import CommentsSlice from './comments/slice';
+import { 
+    useDispatch, 
+    useSelector, 
+    useStore 
+} from 'react-redux';
+import CommentsSlice, { 
+    wsClose, 
+    wsConnecting, 
+    wsError, 
+    wsMessage, 
+    wsOpen, 
+    type TCommentsInternalActions 
+} from './comments/slice';
+import { socketMiddleware } from './middleware';
+import { 
+    commentsWsConnect, 
+    commentsWsDisconnect, 
+    type TCommentsWsExternalActions 
+} from './comments/actions';
+
+const commentsMiddleware = socketMiddleware<unknown, unknown>({
+    connect: commentsWsConnect,
+    disconnect: commentsWsDisconnect,
+    onConnecting: wsConnecting,
+    onOpen: wsOpen,
+    onClose: wsClose,
+    onError: wsError,
+    onMessage: wsMessage,
+})
 
 const rootReducer = combineReducers([
     AuthSlice,
@@ -13,9 +40,14 @@ const rootReducer = combineReducers([
 
 export const store = configureStore({
     reducer: rootReducer,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+        serializableCheck: false,
+    }).concat(commentsMiddleware)
 })
 
 type TAppActions = TAuthInternalActions
+    | TCommentsInternalActions
+    | TCommentsWsExternalActions
 
 export type AppStore = typeof store;
 export type RootState = ReturnType<typeof rootReducer>;
