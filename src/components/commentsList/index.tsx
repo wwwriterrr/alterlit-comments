@@ -36,21 +36,21 @@ export const CommentsList = () => {
             setPending(true);
             resolve('ok');
         })
-        .then(() => {
-            dispatch(CommentsFetch({instanceId: postId as string, type: 'post', signal}))
-                .unwrap()
-                .then(() => {
-                    if(postId){
-                        dispatch(commentsWsConnect(`${WsURL}comments/post/${postId}/`));
-                        interval = setInterval(() => {
-                            console.log('send ping');
-                        }, 60*1000)
-                    };
-                })
-                .catch(() => {
-                    setPending(false);
-                })
-        })
+            .then(() => {
+                dispatch(CommentsFetch({instanceId: postId as string, type: 'post', signal}))
+                    .unwrap()
+                    .then(() => {
+                        if(postId){
+                            dispatch(commentsWsConnect(`${WsURL}comments/post/${postId}/`));
+                            interval = setInterval(() => {
+                                console.log('send ping');
+                            }, 60*1000)
+                        };
+                    })
+                    .catch(() => {
+                        setPending(false);
+                    })
+            })
 
         return () => {
             if(!signal.aborted) controller.abort();

@@ -48,7 +48,25 @@ export const CommentsSlice = createSlice({
             state.connectionError = action.payload;
         },
         wsMessage: (state, action: PayloadAction<IWsMessage>) => {
-            console.log(state, action);
+            if (action.payload.message.type === 'new_comment') {
+                const comment = action.payload.message.comment;
+                if (comment.on_comment) {
+                    const parent = state.comments.find((item) => item.id === comment.on_comment);
+                    if (parent) {
+                        state.comments = state.comments.map((item) => {
+                            if (item.id === parent.id) {
+                                item.reply = [...(item.reply || []), comment];
+                            }
+
+                            return item;
+                        });
+                    }
+                } else {
+                    state.comments = [...state.comments, comment];
+                }
+            } else if (action.payload.message.type === 'change_comment') {
+                // Change
+            }
         },
         // wsSend: (state, action: PayloadAction<unknown>) => {
         //     state.socket?.send(JSON.stringify(action.payload));

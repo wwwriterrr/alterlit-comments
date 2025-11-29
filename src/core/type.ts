@@ -48,5 +48,13 @@ declare global {
         }
     }
 
+    interface IWsChangeCommentMessage extends IWsMessageBase {
+        message: {
+            type: WsMessageTypes.change_comment,
+            comment: IComment,
+        }
+    }
+
     type IWsMessage = IWsNewCommentMessage
+        | IWsChangeCommentMessage
 }
