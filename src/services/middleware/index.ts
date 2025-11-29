@@ -20,41 +20,37 @@ export const socketMiddleware = <S, R>(
 ): Middleware<NonNullable<unknown>, RootState> => {
     return (store) => {
         let socket: WebSocket | null = null;
-        const {
-            connect,
-            sendMessage,
-            onOpen,
-            onClose,
-            onError,
-            onMessage,
-            onConnecting,
-            disconnect,
-        } = wsActions;
+        const { connect, sendMessage, onOpen, onClose, onError, onMessage, onConnecting, disconnect } = wsActions;
         let isConnected = false;
         let reconnectTimer = 0;
         let url = '';
-        
-        return (next) => (action) => {
-            const {dispatch} = store;
+        let interval: number;
 
-            if(connect.match(action)){
+        return (next) => (action) => {
+            const { dispatch } = store;
+
+            if (connect.match(action)) {
                 url = action.payload;
                 socket = new WebSocket(url);
                 isConnected = true;
-                if(onConnecting) dispatch(onConnecting());
+                if (onConnecting) dispatch(onConnecting());
 
                 socket.onopen = () => {
-                    if(onOpen) dispatch(onOpen());
-                }
+                    if (onOpen) dispatch(onOpen());
+
+                    interval = setInterval(() => {
+                        socket?.send(JSON.stringify({ type: 'chat.message', message: {type: 'ping'} }));
+                    }, 60 * 1000);
+                };
 
                 socket.onerror = () => {
-                    dispatch(onError('Error with socket connect'))
-                }
+                    dispatch(onError('Error with socket connect'));
+                };
 
                 socket.onmessage = (event) => {
-                    const {data} = event;
+                    const { data } = event;
 
-                    try{
+                    try {
                         const parsedData = JSON.parse(data);
 
                         console.log('Refresh token params', withTokenRefresh);
@@ -79,38 +75,40 @@ export const socketMiddleware = <S, R>(
                         //         .catch(err => {
                         //             dispatch(onError((err as Error).message));
                         //         });
-                        
+
                         //     dispatch(disconnect());
 
                         //     return;
                         // }
 
-                        if(onMessage) dispatch(onMessage(parsedData));
+                        if (onMessage) dispatch(onMessage(parsedData));
                     } catch (err) {
                         dispatch(onError((err as Error).message));
                     }
-                }
+                };
 
                 socket.onclose = () => {
-                    if(onClose) dispatch(onClose());
+                    if (onClose) dispatch(onClose());
 
-                    if(isConnected){
+                    if (isConnected) {
                         reconnectTimer = window.setTimeout(() => {
                             dispatch(connect(url));
                         }, RECONNECT_PERIOD);
                     }
-                }
+
+                    clearInterval(interval);
+                };
             }
 
-            if(socket && sendMessage?.match(action)) {
-                try{
+            if (socket && sendMessage?.match(action)) {
+                try {
                     socket.send(JSON.stringify(action.payload));
                 } catch (err) {
                     dispatch(onError((err as Error).message));
                 }
             }
 
-            if(socket && disconnect.match(action)){
+            if (socket && disconnect.match(action)) {
                 clearTimeout(reconnectTimer);
                 isConnected = false;
                 reconnectTimer = 0;
@@ -119,6 +117,6 @@ export const socketMiddleware = <S, R>(
             }
 
             next(action);
-        }
-    }
-}
+        };
+    };
+};

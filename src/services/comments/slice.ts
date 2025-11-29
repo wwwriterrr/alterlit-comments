@@ -12,12 +12,14 @@ interface IInitialState {
     comments: IComment[];
     status: WebsocketStatus;
     connectionError: string | null;
+    socket: WebSocket | null;
 }
 
 const initialState: IInitialState = {
     comments: [],
     status: WebsocketStatus.OFFLINE,
     connectionError: '',
+    socket: null,
 };
 
 export const CommentsSlice = createSlice({
@@ -36,16 +38,21 @@ export const CommentsSlice = createSlice({
         wsOpen: (state) => {
             state.status = WebsocketStatus.ONLINE;
             state.connectionError = null;
+            // state.socket = action.payload;
         },
         wsClose: (state) => {
             state.status = WebsocketStatus.OFFLINE;
+            state.socket = null;
         },
         wsError: (state, action) => {
             state.connectionError = action.payload;
         },
-        wsMessage: (state, action: PayloadAction<unknown>) => {
+        wsMessage: (state, action: PayloadAction<IWsMessage>) => {
             console.log(state, action);
         },
+        // wsSend: (state, action: PayloadAction<unknown>) => {
+        //     state.socket?.send(JSON.stringify(action.payload));
+        // },
     },
     selectors: {
         getComments: (state) => state.comments,

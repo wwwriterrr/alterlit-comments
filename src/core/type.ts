@@ -25,6 +25,28 @@ declare global {
         author: IUser;
         content: string;
         on_comment?: number;
-        reply: IComment[];
+        reply?: IComment[];
     }
+
+    enum WsMessageTypes {
+        new_comment = 'new_comment',
+        change_comment = 'change_comment',
+        remove_comment = 'remove_comment'
+    }
+
+    interface IWsMessageBase {
+        type: 'chat.message',
+        message: {
+            type: WsMessageTypes,
+        }
+    }
+
+    interface IWsNewCommentMessage extends IWsMessageBase {
+        message: {
+            type: WsMessageTypes.new_comment,
+            comment: IComment,
+        }
+    }
+
+    type IWsMessage = IWsNewCommentMessage
 }

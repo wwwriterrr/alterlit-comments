@@ -20,7 +20,7 @@ import {
     type TCommentsWsExternalActions 
 } from './comments/actions';
 
-const commentsMiddleware = socketMiddleware<unknown, unknown>({
+const commentsMiddleware = socketMiddleware<unknown, IWsMessage>({
     connect: commentsWsConnect,
     disconnect: commentsWsDisconnect,
     onConnecting: wsConnecting,
