@@ -6,16 +6,22 @@ import { CommentsFetch, commentsWsConnect, commentsWsDisconnect } from '../../se
 import { WsURL } from '../../core/constants';
 import { getComments } from '../../services/comments/slice';
 
-const Comment: FC<{comment: IComment}> = ({comment}) => {
+const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     return (
         <>
-            <div id={`comment-${comment.id}`} className={styles.comment} style={{paddingLeft: comment.on_comment ? 40 : undefined}}>
-                <div className={styles.comment__content} dangerouslySetInnerHTML={{__html: comment.content}}></div>
+            <div
+                id={`comment-${comment.id}`}
+                className={styles.comment}
+                style={{ paddingLeft: comment.on_comment ? 40 : undefined }}
+            >
+                <div className={styles.comment__content} dangerouslySetInnerHTML={{ __html: comment.content }}></div>
             </div>
-            {comment.reply?.map(item => (<Comment comment={item} key={`comment_${comment.id}-${item.id}`} />))}
+            {comment.reply?.map((item) => (
+                <Comment comment={item} key={`comment_${comment.id}-${item.id}`} />
+            ))}
         </>
-    )
-}
+    );
+};
 
 export const CommentsList = () => {
     const [pending, setPending] = useState<boolean>(false);
@@ -27,49 +33,59 @@ export const CommentsList = () => {
     const comments = useAppSelector(getComments);
 
     useEffect(() => {
+        let isMounted = true;
         const controller = new AbortController();
         const signal = controller.signal;
 
-        let interval: number;
+        const fetchComments = async () => {
+            if (!isMounted) return;
 
-        new Promise((resolve) => {
             setPending(true);
-            resolve('ok');
-        })
-            .then(() => {
-                dispatch(CommentsFetch({instanceId: postId as string, type: 'post', signal}))
-                    .unwrap()
-                    .then(() => {
-                        if(postId){
-                            dispatch(commentsWsConnect(`${WsURL}comments/post/${postId}/`));
-                            interval = setInterval(() => {
-                                console.log('send ping');
-                            }, 60*1000)
-                        };
+
+            try {
+                await dispatch(
+                    CommentsFetch({
+                        instanceId: postId as string,
+                        type: 'post',
+                        signal,
                     })
-                    .catch(() => {
-                        setPending(false);
-                    })
-            })
+                ).unwrap();
+
+                if (isMounted && postId) {
+                    dispatch(commentsWsConnect(`${WsURL}comments/post/${postId}/`));
+                }
+
+                setPending(false);
+            } catch (error) {
+                console.error(error);
+                if (isMounted) {
+                    setPending(false);
+                }
+            }
+        };
+
+        if (postId) {
+            fetchComments();
+        }
 
         return () => {
-            if(!signal.aborted) controller.abort();
-
+            isMounted = false;
+            if (!signal.aborted) controller.abort();
             dispatch(commentsWsDisconnect());
+        };
+    }, [postId, dispatch]);
 
-            clearInterval(interval);
-        }
-    }, [postId])
-
-    if(!postId) return null;
+    if (!postId) return null;
 
     return (
         <div className={styles.wrap}>
-            {pending ? (<></>) : (
+            {pending ? (
+                <div className={styles.loader}>Loading ...</div>
+            ) : (
                 <>
                     {comments.length ? (
                         <div className={styles.list}>
-                            {comments.map(item => (
+                            {comments.map((item) => (
                                 <Comment comment={item} key={`comment-${item.id}`} />
                             ))}
                         </div>
@@ -80,4 +96,4 @@ export const CommentsList = () => {
             )}
         </div>
     );
-}
+};

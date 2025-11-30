@@ -65,7 +65,58 @@ export const CommentsSlice = createSlice({
                     state.comments = [...state.comments, comment];
                 }
             } else if (action.payload.message.type === 'change_comment') {
-                // Change
+                const updatedComment = action.payload.message.comment;
+
+                if (updatedComment.on_comment) {
+                    // Обновляем ответ на комментарий
+                    const parent = state.comments.find((item) => item.id === updatedComment.on_comment);
+                    if (parent) {
+                        state.comments = state.comments.map((item) => {
+                            if (item.id === parent.id) {
+                                return {
+                                    ...item,
+                                    reply: (item.reply || []).map((replyItem) =>
+                                        replyItem.id === updatedComment.id ? updatedComment : replyItem
+                                    ),
+                                };
+                            }
+                            return item;
+                        });
+                    }
+                } else {
+                    // Обновляем комментарий верхнего уровня
+                    state.comments = state.comments.map((item) =>
+                        item.id === updatedComment.id ? updatedComment : item
+                    );
+                }
+            } else if (action.payload.message.type === 'remove_comment') {
+                const { comment_id, on_comment } = action.payload.message;
+
+                if (on_comment) {
+                    // Удаляем ответ на коммента��ий
+                    const parent = state.comments.find((item) => item.id === on_comment);
+                    if (parent) {
+                        state.comments = state.comments.map((item) => {
+                            if (item.id === parent.id) {
+                                return {
+                                    ...item,
+                                    reply: (item.reply || []).filter((replyItem) => replyItem.id !== comment_id),
+                                };
+                            }
+                            return item;
+                        });
+                    }
+                } else {
+                    // Удаляем комментарий верхнего уровня и все его ответы (каскадное удаление)
+                    state.comments = state.comments
+                        .filter((item) => item.id !== comment_id) // Удаляем сам комментарий
+                        .map((item) => ({
+                            ...item,
+                            reply: (item.reply || []).filter(
+                                (replyItem) => replyItem.on_comment !== comment_id // Удаляем все ответы на удаляемый комментарий
+                            ),
+                        }));
+                }
             }
         },
         // wsSend: (state, action: PayloadAction<unknown>) => {

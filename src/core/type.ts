@@ -55,6 +55,15 @@ declare global {
         }
     }
 
+    interface IWsRemoveCommentMessage extends IWsMessageBase {
+        message: {
+            type: WsMessageTypes.remove_comment,
+            comment_id: number,
+            on_comment?: number,
+        }
+    }
+
     type IWsMessage = IWsNewCommentMessage
         | IWsChangeCommentMessage
+        | IWsRemoveCommentMessage
 }
