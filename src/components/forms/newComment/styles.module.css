@@ -1,3 +1,66 @@
 .wrap{
-    
+    position: relative;
+    display: grid;
+    grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / 60px 1fr 60px;
+    gap: 0 20px;
+    width: 100%;
+    /* width: 600px;
+    margin: 0 auto; */
+}
+
+.area{
+    grid-area: area;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    max-height: 220px;
+    overflow: auto;
+}
+
+.area > div{
+    min-height: 40px;
+}
+
+.btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #eeebde;
+}
+
+.attachBtn{
+    grid-area: attach;
+    justify-self: end;
+}
+
+.submitBtn{
+    grid-area: submit;
+}
+
+.submitBtn:disabled{
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.attach{
+    grid-area: alist;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0 0 10px 0;
+}
+
+.attach__item{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.attach__item img{
+    height: 60px;
+    width: auto;
+    border-radius: 6px;
 }

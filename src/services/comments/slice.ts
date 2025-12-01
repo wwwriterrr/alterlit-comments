@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 const WebsocketStatus = {
     CONNECTING: 'CONNECTING...',
@@ -8,11 +8,12 @@ const WebsocketStatus = {
 
 type WebsocketStatus = (typeof WebsocketStatus)[keyof typeof WebsocketStatus];
 
-interface IInitialState {
+export interface IInitialState {
     comments: IComment[];
     status: WebsocketStatus;
     connectionError: string | null;
     socket: WebSocket | null;
+    afterExist: boolean;
 }
 
 const initialState: IInitialState = {
@@ -20,6 +21,7 @@ const initialState: IInitialState = {
     status: WebsocketStatus.OFFLINE,
     connectionError: '',
     socket: null,
+    afterExist: false,
 };
 
 export const CommentsSlice = createSlice({
@@ -31,6 +33,9 @@ export const CommentsSlice = createSlice({
         },
         addComments: (state, action: PayloadAction<IComment[]>) => {
             state.comments = [...state.comments, ...action.payload];
+        },
+        setCommentsAfterExist: (state, action: PayloadAction<boolean>) => {
+            state.afterExist = action.payload;
         },
         wsConnecting: (state) => {
             state.status = WebsocketStatus.CONNECTING;
@@ -125,12 +130,29 @@ export const CommentsSlice = createSlice({
     },
     selectors: {
         getComments: (state) => state.comments,
+        getComment: createSelector(
+            (state: IInitialState) => state.comments,
+            (_: IInitialState, id: IComment['id']) => id,
+            (comments, id) => {
+                const findRec = (items: IComment[] | undefined): IComment | undefined => {
+                    if (!items) return undefined;
+                    for (const item of items) {
+                        if (item.id === id) return item;
+                        const foundInReply = findRec(item.reply);
+                        if (foundInReply) return foundInReply;
+                    }
+                    return undefined;
+                };
+                return findRec(comments);
+            }
+        ),
+        getCommentsAfterExist: (state) => state.afterExist,
     },
 });
 
-export const { setComments, addComments, wsClose, wsConnecting, wsError, wsMessage, wsOpen } = CommentsSlice.actions;
+export const { setComments, addComments, setCommentsAfterExist, wsClose, wsConnecting, wsError, wsMessage, wsOpen } = CommentsSlice.actions;
 
-export const { getComments } = CommentsSlice.selectors;
+export const { getComments, getComment, getCommentsAfterExist } = CommentsSlice.selectors;
 
 export default CommentsSlice;
 

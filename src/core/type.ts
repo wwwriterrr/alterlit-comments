@@ -19,19 +19,29 @@ declare global {
         groups: string[];
     }
 
+    interface ICommentImage {
+        id: number;
+        url: string;
+        preview: string;
+    }
+
     interface IComment {
         id: number;
         dt: string | number;
         author: IUser;
         content: string;
+        images?: ICommentImage[];
         on_comment?: number;
         reply?: IComment[];
+        likes?: number[];
     }
 
     enum WsMessageTypes {
         new_comment = 'new_comment',
         change_comment = 'change_comment',
-        remove_comment = 'remove_comment'
+        remove_comment = 'remove_comment',
+        like_comment = 'like_comment',
+        dislike_comment = 'dislike_comment',
     }
 
     interface IWsMessageBase {
@@ -63,7 +73,25 @@ declare global {
         }
     }
 
+    interface IWsLikeCommentMessage extends IWsMessageBase {
+        message: {
+            type: WsMessageTypes.like_comment,
+            comment_id: number,
+            user_id: number,
+        }
+    }
+
+    interface IWsDislikeCommentMessage extends IWsMessageBase {
+        message: {
+            type: WsMessageTypes.dislike_comment,
+            comment_id: number,
+            user_id: number,
+        }
+    }
+
     type IWsMessage = IWsNewCommentMessage
         | IWsChangeCommentMessage
         | IWsRemoveCommentMessage
+        | IWsLikeCommentMessage
+        | IWsDislikeCommentMessage
 }

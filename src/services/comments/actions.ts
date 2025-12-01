@@ -1,6 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ApiURL } from "../../core/constants";
-import { setComments } from "./slice";
+import { setComments, setCommentsAfterExist } from "./slice";
 
 export const commentsWsConnect = createAction<string, 'FEED_CONNECT'>('FEED_CONNECT');
 
@@ -20,9 +20,10 @@ export const CommentsFetch = createAsyncThunk(
                 return rejectWithValue('Failed to fetch comments');
             }
 
-            const data: {comments: IComment[]} = await response.json();
+            const data: {comments: IComment[], after_exist: boolean} = await response.json();
 
             dispatch(setComments(data.comments));
+            dispatch(setCommentsAfterExist(data.after_exist));
 
             return;
         } catch (error) {
