@@ -24,6 +24,8 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
     const liked = useMemo(() => comment.likes?.includes(1), [comment.likes]);
 
+    const editedOpacity = useMemo(() => (showEditForm ? 0.3 : undefined), [showEditForm]);
+
     const dt = useMemo(() => new Date(comment.dt).toLocaleDateString('ru-RU', {
         day: '2-digit',
         month: 'short',
@@ -59,7 +61,7 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         <div className={styles.comment__dt}>{dt}</div>
                     </div>
                     {comment.images?.length ? (
-                        <div className={styles.comment__attach} style={{ opacity: showEditForm ? 0.5 : 1 }}>
+                        <div className={styles.comment__attach} style={{ opacity: editedOpacity }}>
                             {comment.images.map((image) => (
                                 <img
                                     key={`comment-image-${image.id}`}
@@ -73,12 +75,12 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     <div
                         className={styles.comment__content}
                         dangerouslySetInnerHTML={{ __html: comment.content }}
-                        style={{ opacity: showEditForm ? 0.5 : 1 }}
+                        style={{ opacity: editedOpacity }}
                     ></div>
                     <div className={styles.comment__manage}>
                         <button
                             className={styles.comment__likes}
-                            style={{ opacity: showEditForm ? 0.5 : 1 }}
+                            style={{ opacity: editedOpacity }}
                             disabled={showEditForm}
                         >
                             <LikeIcon size={26} fill={liked ? '#D78778' : '#DFD9C2'} />
@@ -90,7 +92,7 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             className={styles.comment__reply}
                             title='Ответить'
                             onClick={handleReply}
-                            style={{ opacity: showEditForm ? 0.5 : 1 }}
+                            style={{ opacity: editedOpacity }}
                         >
                             {showReplyForm ? (
                                 <CloseIcon size={20} fill="#bbb7a7" />
@@ -101,7 +103,7 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         <button
                             className={styles.comment__complaint}
                             title='Пожаловаться'
-                            style={{ opacity: showEditForm ? 0.5 : 1 }}
+                            style={{ opacity: editedOpacity }}
                             disabled={showEditForm || showReplyForm}
                         >
                             <ComplaintIcon size={20} fill="#bbb7a7" />
@@ -120,7 +122,7 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         <button
                             className={styles.comment__remove}
                             title='Удалить'
-                            style={{ opacity: showEditForm ? 0.5 : 1 }}
+                            style={{ opacity: editedOpacity }}
                             disabled={showEditForm || showReplyForm}
                         >
                             <TrashIcon size={20} fill="#D78778" />
