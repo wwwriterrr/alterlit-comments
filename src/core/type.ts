@@ -1,5 +1,12 @@
 
 declare global {
+    interface IAuthUser {
+        id: number,
+        access: string,
+        refresh: string,
+        permissions: string[],
+    }
+
     type TIconProps = {
         size?: number | string;
         width?: number | string;

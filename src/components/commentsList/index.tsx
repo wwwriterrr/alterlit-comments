@@ -12,27 +12,36 @@ import { EditIcon } from '../icons/edit';
 import { TrashIcon } from '../icons/trash';
 import { CommentForm } from '../forms/newComment';
 import { CloseIcon } from '../icons/close';
+import { getUser } from '../../services/auth/slice';
 
 const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     const [showReply, setShowReply] = useState<boolean>(false);
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [showEditForm, setShowEditForm] = useState<boolean>(false);
 
+    const user = useAppSelector(getUser);
+
+    const isShowReply = useMemo(() => (user ? true : false), [user]);
+
     const handleShowReply = useCallback(() => {
         setShowReply(!showReply);
-    }, [showReply])
+    }, [showReply]);
 
     const liked = useMemo(() => comment.likes?.includes(1), [comment.likes]);
 
     const editedOpacity = useMemo(() => (showEditForm ? 0.3 : undefined), [showEditForm]);
 
-    const dt = useMemo(() => new Date(comment.dt).toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }), [comment.dt]);
+    const dt = useMemo(
+        () =>
+            new Date(comment.dt).toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
+        [comment.dt]
+    );
 
     const handleReply = useCallback(() => {
         setShowEditForm(false);
@@ -51,12 +60,18 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                 className={`${styles.comment} ${comment.on_comment ? styles.comment_reply : ''}`}
             >
                 <div className={styles.comment__avatar}>
-                    <img className={styles.comment__avatar__image} src={`${HostURL}${comment.author.avatar}`} alt={comment.author.name} />
+                    <img
+                        className={styles.comment__avatar__image}
+                        src={`${HostURL}${comment.author.avatar}`}
+                        alt={comment.author.name}
+                    />
                 </div>
                 <div className={styles.comment__body}>
                     <div className={styles.comment__head}>
                         <div className={styles.comment__user}>
-                            <Link className={styles.comment__user__link} to={`/profile/${comment.author.username}/`}>{comment.author.name}</Link>
+                            <Link className={styles.comment__user__link} to={`/profile/${comment.author.username}/`}>
+                                {comment.author.name}
+                            </Link>
                         </div>
                         <div className={styles.comment__dt}>{dt}</div>
                     </div>
@@ -84,44 +99,36 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             disabled={showEditForm}
                         >
                             <LikeIcon size={26} fill={liked ? '#D78778' : '#DFD9C2'} />
-                            {comment.likes?.length ? (
-                                <span>{comment.likes.length}</span>
-                            ) : null}
+                            {comment.likes?.length ? <span>{comment.likes.length}</span> : null}
                         </button>
-                        <button
-                            className={styles.comment__reply}
-                            title='Ответить'
-                            onClick={handleReply}
-                            style={{ opacity: editedOpacity }}
-                        >
-                            {showReplyForm ? (
-                                <CloseIcon size={20} fill="#bbb7a7" />
-                            ) : (
-                                <ReplyIcon size={20} fill="#bbb7a7" />
-                            )}
-                        </button>
+                        {isShowReply ? (
+                            <button
+                                className={styles.comment__reply}
+                                title="Ответить"
+                                onClick={handleReply}
+                                style={{ opacity: editedOpacity }}
+                            >
+                                {showReplyForm ? (
+                                    <CloseIcon size={20} fill="#bbb7a7" />
+                                ) : (
+                                    <ReplyIcon size={20} fill="#bbb7a7" />
+                                )}
+                            </button>
+                        ) : null}
                         <button
                             className={styles.comment__complaint}
-                            title='Пожаловаться'
+                            title="Пожаловаться"
                             style={{ opacity: editedOpacity }}
                             disabled={showEditForm || showReplyForm}
                         >
                             <ComplaintIcon size={20} fill="#bbb7a7" />
                         </button>
-                        <button
-                            className={styles.comment__edit}
-                            title='Редактировать'
-                            onClick={handleEdit}
-                        >
-                            {showEditForm ? (
-                                <CloseIcon size={20} fill="#000" />
-                            ) : (
-                                <EditIcon size={20} fill="#0079f0" />
-                            )}
+                        <button className={styles.comment__edit} title="Редактировать" onClick={handleEdit}>
+                            {showEditForm ? <CloseIcon size={20} fill="#000" /> : <EditIcon size={20} fill="#0079f0" />}
                         </button>
                         <button
                             className={styles.comment__remove}
-                            title='Удалить'
+                            title="Удалить"
                             style={{ opacity: editedOpacity }}
                             disabled={showEditForm || showReplyForm}
                         >
@@ -129,15 +136,13 @@ const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         </button>
                     </div>
                     {comment.reply && comment.reply.length ? (
-                        <button className={styles.comment__showReply} onClick={handleShowReply}>{showReply ? 'Скрыть' : 'Показать'} ответы {!showReply ? `(${comment.reply.length})` : ''}</button>
+                        <button className={styles.comment__showReply} onClick={handleShowReply}>
+                            {showReply ? 'Скрыть' : 'Показать'} ответы {!showReply ? `(${comment.reply.length})` : ''}
+                        </button>
                     ) : null}
                 </div>
             </div>
-            {showReplyForm ? (
-                <CommentForm
-                    replyTo={comment.on_comment ? comment.on_comment : comment.id}
-                />
-            ) : null}
+            {showReplyForm && isShowReply ? <CommentForm replyTo={comment.on_comment ? comment.on_comment : comment.id} /> : null}
             {showEditForm ? (
                 <CommentForm
                     editId={comment.id}
@@ -220,9 +225,7 @@ export const CommentsList = () => {
                 <>
                     {comments.length ? (
                         <div className={styles.list}>
-                            {commentsAfterExist ? (
-                                <button>Предыдущие комментарии</button>
-                            ) : null}
+                            {commentsAfterExist ? <button>Предыдущие комментарии</button> : null}
                             {comments.map((item) => (
                                 <Comment comment={item} key={`comment-${item.id}`} />
                             ))}
