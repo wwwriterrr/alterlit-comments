@@ -1,6 +1,6 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ApiURL } from "../../core/constants";
-import { setComments, setCommentsAfterExist } from "./slice";
+import { addComments, setComments, setCommentsAfterExist } from "./slice";
 
 export const commentsWsConnect = createAction<string, 'FEED_CONNECT'>('FEED_CONNECT');
 
@@ -8,9 +8,13 @@ export const commentsWsDisconnect = createAction('FEED_DISCONNECT');
 
 export const CommentsFetch = createAsyncThunk(
     'comments/fetch',
-    async ({ type = 'post', instanceId, signal }: { instanceId: string, type: string, signal: AbortSignal }, { rejectWithValue, dispatch }) => {
+    async ({ dispatchMethod='set', type = 'post', instanceId, signal, filters }: { instanceId: string, dispatchMethod?: 'set' | 'add', type: string, signal?: AbortSignal, filters?: {[key: string]: string | number | boolean} }, { rejectWithValue, dispatch }) => {
         try {
             const url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
+
+            if (filters){
+                url.searchParams.set('filters', JSON.stringify(filters));
+            }
 
             const response = await fetch(url, {
                 signal,
@@ -22,7 +26,8 @@ export const CommentsFetch = createAsyncThunk(
 
             const data: { comments: IComment[], after_exist: boolean } = await response.json();
 
-            dispatch(setComments(data.comments));
+            if  (dispatchMethod === 'set')  dispatch(setComments(data.comments));
+            else if (dispatchMethod === 'add') dispatch(addComments(data.comments));
             dispatch(setCommentsAfterExist(data.after_exist));
 
             return;

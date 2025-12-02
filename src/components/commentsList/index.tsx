@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import styles from './styles.module.css';
-import { useEffect, useState, type FC } from 'react';
+import { useCallback, useEffect, useState, type FC } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { CommentsFetch, commentsWsConnect, commentsWsDisconnect } from '../../services/comments/actions';
 import { WsURL } from '../../core/constants';
@@ -16,6 +16,18 @@ export const CommentsList: FC = () => {
 
     const comments = useAppSelector(getComments);
     const commentsAfterExist = useAppSelector((state) => state.comments.afterExist);
+
+    const handleMore = useCallback(() => {
+        if(!commentsAfterExist) return;
+        if(!postId) return;
+
+        dispatch(CommentsFetch({
+            instanceId: postId, 
+            dispatchMethod: 'add', 
+            type: 'post',
+            filters: {date__lt: comments[0].dt},
+        }))
+    }, [dispatch, commentsAfterExist, postId, comments])
 
     useEffect(() => {
         let isMounted = true;
@@ -70,7 +82,7 @@ export const CommentsList: FC = () => {
                 <>
                     {comments.length ? (
                         <div className={styles.list}>
-                            {commentsAfterExist ? <button>Предыдущие комментарии</button> : null}
+                            {commentsAfterExist ? <button onClick={handleMore}>Предыдущие комментарии</button> : null}
                             {comments.map((item) => (
                                 <Comment comment={item} key={`comment-${item.id}`} />
                             ))}

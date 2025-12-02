@@ -32,7 +32,7 @@ export const CommentsSlice = createSlice({
             state.comments = action.payload;
         },
         addComments: (state, action: PayloadAction<IComment[]>) => {
-            state.comments = [...state.comments, ...action.payload];
+            state.comments = [...action.payload, ...state.comments,];
         },
         setCommentsAfterExist: (state, action: PayloadAction<boolean>) => {
             state.afterExist = action.payload;
