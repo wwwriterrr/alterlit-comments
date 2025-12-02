@@ -122,3 +122,9 @@
     height: 140px;
     width: auto;
 }
+
+.comment__timer{
+    font-size: 12px;
+    font-weight: 400;
+    opacity: .5;
+}

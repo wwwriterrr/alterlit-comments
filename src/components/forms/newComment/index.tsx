@@ -7,9 +7,13 @@ import { type EventHandler } from '@tinymce/tinymce-react/lib/cjs/main/ts/Events
 import { getLastWord } from './utils';
 import { SendIcon } from '../../icons/send';
 import { AddImageIcon } from '../../icons/addImage';
-import { useAppSelector } from '../../../services/store';
+import { useAppDispatch, useAppSelector } from '../../../services/store';
 import { getComment, type IInitialState } from '../../../services/comments/slice';
 import { HostURL } from '../../../core/constants';
+import { CommentFormMention } from './mention';
+import { CommentsSend } from '../../../services/comments/actions';
+import { useParams } from 'react-router-dom';
+import { LoaderSpinnerIcon } from '../../icons/loader';
 
 type TEditorEventHandler<K extends keyof Events.EditorEventMap> = EventHandler<Events.EditorEventMap[K]>;
 
@@ -18,47 +22,82 @@ type TProps = {
     editId?: number;
     className?: string;
     style?: CSSProperties;
+    onSuccess?: () => void;
 }
 
-export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style }) => {
-    const comment = useAppSelector((state: {comments: IInitialState}) => getComment(state, editId || 0));
+export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onSuccess }) => {
+    const comment = useAppSelector((state: { comments: IInitialState }) => getComment(state, editId || 0));
 
     const [value, setValue] = useState<string>(comment ? comment.content : '');
     const [attach, setAttach] = useState<ICommentImage[]>(comment ? comment.images || [] : []);
+    const [showMention, setShowMention] = useState<boolean>(false);
+    const [mentionQuery, setMentionQuery] = useState<string>('');
+    const [pending, setPending] = useState<boolean>(false);
+
+    const { postId } = useParams();
+
+    const dispatch = useAppDispatch();
 
     const editorRef = useRef(null);
 
     const changeHandler = (newContent: string) => {
         setValue(newContent);
+
+        const lastWord = getLastWord();
+        if (/\B@\w*/.test(lastWord)) {
+            // Show mention
+            setShowMention(true);
+            setMentionQuery(lastWord.replace('@', ''));
+        } else {
+            // Close mention
+            setShowMention(false);
+            setMentionQuery('');
+        }
     }
 
     const initHindler: TEditorEventHandler<'init'> = (_, editor) => {
         editorRef.current = editor;
     }
 
-    const inputHandler: TEditorEventHandler<'input'> = () => {
-        const lastWord = getLastWord();
-        if (/\B@\w*/.test(lastWord)) {
-            // Show mention
-            console.log('Show mention');
-        } else {
-            // Close mention
-            console.log('Close mention');
+    const submitHandler = () => {
+        if (!postId) return;
+        if (!value) return;
+
+        const clean = (content: string) => {
+            content = content.replace(/(?:<p>\s*<\/p>\s*)+/gi, '');
+            content = content.replace(/&nbsp;/g, ' ');
+            content = content.replace(/\n+/g, '\n');
+            return content;
         }
+
+        console.log('Submit comment:', clean(value));
+
+        setPending(true);
+        dispatch(CommentsSend({
+            instanceId: postId,
+            type: 'post',
+            content: clean(value),
+            replyTo: replyTo,
+        }))
+            .unwrap()
+            .then(() => {
+                setValue('');
+                onSuccess?.();
+            })
+            .finally(() => setPending(false));
     }
 
-    const submitHandler = useCallback(() => {
-        console.log('Submit comment:', value);
-    }, [value])
-
     return (
-        <div 
-            className={`${styles.wrap} ${className}`} 
-            style={{ 
+        <div
+            className={`${styles.wrap} ${className}`}
+            style={{
                 paddingLeft: replyTo ? 80 : undefined,
                 ...style,
             }}
         >
+            {showMention ? (
+                <CommentFormMention query={mentionQuery} />
+            ) : null}
             {attach.length ? (
                 <div className={styles.attach}>
                     {attach.map((item) => (
@@ -77,7 +116,6 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style }) =
                 <Editor
                     tinymceScriptSrc="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.5.0/tinymce.min.js"
                     onInit={initHindler}
-                    onInput={inputHandler}
                     inline
                     value={value}
                     onEditorChange={changeHandler}
@@ -108,9 +146,13 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style }) =
             <button
                 className={`${styles.btn} ${styles.submitBtn}`}
                 onClick={submitHandler}
-                disabled={!value.trim()}
+                disabled={!value.trim() || pending}
             >
-                <SendIcon size={24} fill="#000" />
+                {pending ? (
+                    <LoaderSpinnerIcon size={24} fill="#000" />
+                ) : (
+                    <SendIcon size={24} fill="#000" />
+                )}
             </button>
         </div>
     )

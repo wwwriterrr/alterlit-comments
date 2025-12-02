@@ -4,7 +4,7 @@ declare global {
         id: number,
         access: string,
         refresh: string,
-        permissions: string[],
+        perms: string[],
     }
 
     type TIconProps = {
