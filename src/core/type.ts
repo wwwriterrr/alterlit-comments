@@ -26,6 +26,8 @@ declare global {
         groups: string[];
     }
 
+    type TAutocompleteUser = Omit<IUser, 'is_staff' | 'groups'>
+
     interface ICommentImage {
         id: number;
         url: string;
@@ -101,4 +103,10 @@ declare global {
         | IWsRemoveCommentMessage
         | IWsLikeCommentMessage
         | IWsDislikeCommentMessage
+
+    interface IAppImage {
+        id: number,
+        url: string,
+        preview: string,
+    }
 }

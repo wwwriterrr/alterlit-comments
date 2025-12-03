@@ -1,27 +1,48 @@
 import { useCallback, useEffect, useState, type FC } from "react";
 import styles from "./mention.module.css";
+import { useAppDispatch } from "../../../services/store";
+import { CommentsUserAutocomplete } from "../../../services/comments/actions";
+import { LoaderSpinnerIcon } from "../../icons/loader";
 
-const MentionItem: FC<{ item: unknown, onItemSelect?: () => void }> = ({ item, onItemSelect }) => {
+const MentionItem: FC<{ item: TAutocompleteUser, onItemSelect?: (user: TAutocompleteUser) => void }> = ({ item, onItemSelect }) => {
     const clickHandler = useCallback(() => {
-        onItemSelect?.();
-    }, [onItemSelect])
+        onItemSelect?.(item);
+    }, [onItemSelect, item])
 
     console.log(item);
 
     return (
-        <div className={styles.item} onClick={clickHandler}>
-
+        <div className={styles.item}>
+            <button type="button" onClick={clickHandler}>{item.name}</button>
         </div>
     )
 }
 
-export const CommentFormMention: FC<{ query: string, onItemSelect?: () => void }> = ({ query, onItemSelect }) => {
+export const CommentFormMention: FC<{ query: string, onItemSelect?: (user: TAutocompleteUser) => void }> = ({ query, onItemSelect }) => {
     const [pending, setPending] = useState<boolean>(false);
-    const [items, setItems] = useState<[]>([]);
+    const [items, setItems] = useState<TAutocompleteUser[]>([]);
+
+    const dispatch = useAppDispatch();
 
     useEffect(() => {
-        
-    }, [query])
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        const timeout = setTimeout(() => {
+            setPending(true);
+            dispatch(CommentsUserAutocomplete({q: query}))
+                .unwrap()
+                .then(data => {
+                    setItems(data.objects);
+                })
+                .finally(() => setPending(false))
+        }, 300)
+
+        return () => {
+            clearTimeout(timeout);
+            if(!signal.aborted) controller.abort();
+        }
+    }, [query, dispatch])
 
     if (!query) {
         return null;
@@ -32,7 +53,9 @@ export const CommentFormMention: FC<{ query: string, onItemSelect?: () => void }
             {query ? (
                 <div className={styles.list}>
                     {pending ? (
-                        <div className={styles.item_loader}></div>
+                        <div className={styles.item_loader}>
+                            <LoaderSpinnerIcon size={20} fill="#444" />
+                        </div>
                     ) : (
                         <>
                             {items.length ? (
@@ -46,14 +69,12 @@ export const CommentFormMention: FC<{ query: string, onItemSelect?: () => void }
                                     ))}
                                 </>
                             ) : (
-                                <div className={styles.item_empty}></div>
+                                <div className={styles.item_empty}>По вашему запросу не нашлось результатов</div>
                             )}
                         </>
                     )}
                 </div>
-            ) : (
-                <div className={styles.empty}>Начните вводить имя пользователя</div>
-            )}
+            ) : null}
             <div className={styles.help}>Вместо пробела используйте нижнее подчеркивание</div>
         </div>
     )

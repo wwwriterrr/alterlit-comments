@@ -1,0 +1,86 @@
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.wrap{
+
+}
+
+.skeleton{
+    position: relative;
+    display: grid;
+    grid-template: repeat(3, 90px) / repeat(3, 1fr);
+    gap: 10px;
+}
+
+.skeleton__item{
+    background-color: #e5e0d7;
+
+    /* базовый фон — нейтральный цвет для "заглушки" */
+    background: linear-gradient(90deg, #e5e0d7 25%, #fdf8ef 37%, #e5e0d7 63%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    overflow: hidden;
+
+    /* анимация скольжения градиента */
+    animation: shimmer 2s linear infinite;
+}
+
+/* уважение к предпочтениям пользователя — отключаем анимацию, если нужно */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton__item {
+        animation: none;
+        background-position: 50% 0;
+    }
+}
+
+.list{
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 90px;
+    min-height: 300px;
+    max-height: 600px;
+    padding: 5px;
+    gap: 10px;
+    overflow: auto;
+}
+
+.item{
+    position: relative;
+    background-color: #e3e3e3;
+}
+
+.item_selected{
+    outline: 5px solid #0079f0;
+}
+
+.item > img{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.manage{
+
+}
+
+.submitBtn{
+    position: relative;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 6px;
+    background-color: #0079f0;
+    color: #fff;
+}
+
+.submitBtn:disabled{
+    opacity: .5;
+}

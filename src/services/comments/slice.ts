@@ -122,6 +122,43 @@ export const CommentsSlice = createSlice({
                             ),
                         }));
                 }
+            } else if (action.payload.message.type === 'like_comment') {
+                const { comment_id, user_id } = action.payload.message;
+
+                const addLikeRec = (items: IComment[] | undefined): boolean => {
+                    if (!items) return false;
+                    for (const item of items) {
+                        if (item.id === comment_id) {
+                            item.likes = item.likes || [];
+                            if (!item.likes.includes(user_id)) {
+                                item.likes.push(user_id);
+                            }
+                            return true;
+                        }
+                        if (addLikeRec(item.reply)) return true;
+                    }
+                    return false;
+                };
+
+                addLikeRec(state.comments);
+            } else if (action.payload.message.type === 'dislike_comment') {
+                const { comment_id, user_id } = action.payload.message;
+
+                const removeLikeRec = (items: IComment[] | undefined): boolean => {
+                    if (!items) return false;
+                    for (const item of items) {
+                        if (item.id === comment_id) {
+                            if (item.likes && item.likes.length) {
+                                item.likes = item.likes.filter((id) => id !== user_id);
+                            }
+                            return true;
+                        }
+                        if (removeLikeRec(item.reply)) return true;
+                    }
+                    return false;
+                };
+
+                removeLikeRec(state.comments);
             }
         },
         // wsSend: (state, action: PayloadAction<unknown>) => {

@@ -14,6 +14,9 @@ import { CommentFormMention } from './mention';
 import { CommentsSend } from '../../../services/comments/actions';
 import { useParams } from 'react-router-dom';
 import { LoaderSpinnerIcon } from '../../icons/loader';
+import { openModal } from '../../../services/modal/slice';
+import { AttachModal } from '../../modals/attach';
+import { animateCloseModal } from '../../../services/modal/actions';
 
 type TEditorEventHandler<K extends keyof Events.EditorEventMap> = EventHandler<Events.EditorEventMap[K]>;
 
@@ -47,7 +50,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
         if (/\B@\w*/.test(lastWord)) {
             // Show mention
             setShowMention(true);
-            setMentionQuery(lastWord.replace('@', ''));
+            setMentionQuery(lastWord);
         } else {
             // Close mention
             setShowMention(false);
@@ -65,6 +68,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
 
         const clean = (content: string) => {
             content = content.replace(/(?:<p>\s*<\/p>\s*)+/gi, '');
+            content = content.replace(/<span>&nbsp;<\/span>/g, ' ');
             content = content.replace(/&nbsp;/g, ' ');
             content = content.replace(/\n+/g, '\n');
             return content;
@@ -78,14 +82,49 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             type: 'post',
             content: clean(value),
             replyTo: replyTo,
+            images: attach.reduce((acc, item) => {
+                acc.push(item.id);
+                return acc;
+            }, [] as number[])
         }))
             .unwrap()
             .then(() => {
                 setValue('');
+                setAttach([]);
                 onSuccess?.();
             })
             .finally(() => setPending(false));
     }
+
+    const handleMentionSelect = useCallback((user: TAutocompleteUser) => {
+        if (!editorRef.current) return;
+
+        const content = editorRef.current.getContent() as string;
+        const href = `${HostURL}/profile/${user.username}/`;
+        const newContent = content.replace(mentionQuery, `<a href="${href}">${user.name}</a><span>&nbsp;</span>`);
+
+        setValue(newContent);
+
+        setTimeout(() => {
+            try {
+                const node = editorRef.current?.dom.select(`a[href="${href}"] + span`);
+                editorRef.current?.selection.setCursorLocation(node[0].firstChild, 1);
+                editorRef.current?.focus();
+            } catch (err) {
+                console.log('Error with set cursor', err);
+            }
+        }, 100);
+
+    }, [mentionQuery])
+
+    const handleAttachSubmit = useCallback((images: IAppImage[]) => {
+        setAttach([...attach, ...images]);
+        dispatch(animateCloseModal(200));
+    }, [attach, dispatch])
+
+    const handleAttachClick = useCallback(() => {
+        dispatch(openModal({content: (<AttachModal multiple onSubmit={handleAttachSubmit} />)}));
+    }, [dispatch, handleAttachSubmit])
 
     return (
         <div
@@ -96,7 +135,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             }}
         >
             {showMention ? (
-                <CommentFormMention query={mentionQuery} />
+                <CommentFormMention query={mentionQuery.replace('@', '').replace(/\s+$/g, '')} onItemSelect={handleMentionSelect} />
             ) : null}
             {attach.length ? (
                 <div className={styles.attach}>
@@ -107,7 +146,11 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                     ))}
                 </div>
             ) : null}
-            <button className={`${styles.btn} ${styles.attachBtn}`}>
+            <button
+                type="button"
+                className={`${styles.btn} ${styles.attachBtn}`}
+                onClick={handleAttachClick}
+            >
                 <AddImageIcon size={24} fill="#000" />
             </button>
             <div className={styles.area} style={{
@@ -138,7 +181,24 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                             '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding',
                         },
                         // forced_root_block: 'div',
-                        content_style: 'body{font-size: 16px;} .mce-content-body p{margin: 0 0 14px 0;font-size: .9em;line-height: 1.2em;} .mce-content-body p:last-child{margin-bottom: 0;} .mce-content-body a[data-user]{color: #0079f0;}',
+                        content_style: `
+                            body{
+                                font-size: 16px;
+                            } 
+                            p{
+                                margin: 0 0 10px 0;
+                            }
+                            p:last-child{
+                                margin-bottom: 0;
+                            } 
+                            a[data-user]{
+                                color: #0079f0;
+                            } 
+                            a{
+                                color: #0079f0;
+                                text-decoration: underline;
+                            }
+                        `,
                         auto_focus: true,
                     }}
                 />

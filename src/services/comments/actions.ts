@@ -100,6 +100,7 @@ export const CommentsRemove = createAsyncThunk(
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
                 signal,
@@ -110,6 +111,110 @@ export const CommentsRemove = createAsyncThunk(
             }
 
             return;
+        } catch (err) {
+            return rejectWithValue(err);
+        }
+    }
+)
+
+export const CommentsLike = createAsyncThunk(
+    'comments/Like',
+    async ({contentType='comment', objectId, signal}: {contentType?: string, objectId: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+        try{
+            const url = new URL(`${ApiURL}like/${contentType}/${objectId}/`);
+
+            const state = getState() as { auth: { user: IAuthUser | null } };
+            const token = state.auth.user?.access || '';
+
+            if (!token) {
+                return rejectWithValue('No auth token');
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                signal,
+            });
+
+            if (!response.ok) {
+                return rejectWithValue('Failed like comment');
+            }
+
+            return;
+        } catch (err) {
+            return rejectWithValue(err);
+        }
+    }
+)
+
+export const CommentsUserAutocomplete = createAsyncThunk(
+    'commens/autocomplete/users',
+    async ({q, signal}: {q: string, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+        try{
+            const url = new URL(`${ApiURL}autocomplete/users/?q=${q}`);
+
+            const state = getState() as { auth: { user: IAuthUser | null } };
+            const token = state.auth.user?.access || '';
+
+            if (!token) {
+                return rejectWithValue('No auth token');
+            }
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                signal,
+            });
+
+            if (!response.ok) {
+                return rejectWithValue('Failed like comment');
+            }
+
+            const data: {objects: TAutocompleteUser[], more: boolean} = await response.json();
+
+            return data;
+        } catch (err) {
+            return rejectWithValue(err);
+        }
+    }
+)
+
+export const CommentsFetchImages = createAsyncThunk(
+    'comments/fetchImages',
+    async ({limit=21, signal}: {limit?: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+        try{
+            const url = new URL(`${ApiURL}images/?limit=${limit}`);
+
+            const state = getState() as { auth: { user: IAuthUser | null } };
+            const token = state.auth.user?.access || '';
+
+            if (!token) {
+                return rejectWithValue('No auth token');
+            }
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                signal,
+            });
+
+            if (!response.ok) {
+                return rejectWithValue('Failed like comment');
+            }
+
+            const data: {images: IAppImage[], more: boolean} = await response.json();
+
+            return data;
         } catch (err) {
             return rejectWithValue(err);
         }

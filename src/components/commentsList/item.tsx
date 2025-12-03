@@ -11,7 +11,8 @@ import { ComplaintIcon } from '../icons/complaint';
 import { EditIcon } from '../icons/edit';
 import { TrashIcon } from '../icons/trash';
 import { CommentForm } from '../forms/newComment';
-import { CommentsRemove } from '../../services/comments/actions';
+import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
+import { openModal } from '../../services/modal/slice';
 
 const DELTA = 5 * 60 * 1000;
 
@@ -19,6 +20,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     const [showReply, setShowReply] = useState<boolean>(false);
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [showEditForm, setShowEditForm] = useState<boolean>(false);
+    const [removePending, setRemovePending] = useState<boolean>(false);
 
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -94,9 +96,25 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         setShowEditForm(!showEditForm);
     }, [showEditForm]);
 
-    const handleRemove = useCallback(() => {
-        dispatch(CommentsRemove({commentId: comment.id}));
+    const handleRemove = useCallback(async () => {
+        // dispatch(CommentsRemove({commentId: comment.id}));
+        const msg = `Вы точно хотите удалить комментарий${comment.reply?.length ? ' и всю ветку ответов' : ''}?`;
+        const res = confirm(msg)
+
+        if(res){
+            setRemovePending(true);
+            dispatch(CommentsRemove({commentId: comment.id}))
+                .finally(() => setRemovePending(false));
+        }
+    }, [comment.id, comment.reply, dispatch])
+
+    const handleLike = useCallback(() => {
+        dispatch(CommentsLike({contentType: 'comment', objectId: comment.id}));
     }, [comment.id, dispatch])
+
+    const handleCompliant = useCallback(() => {
+        dispatch(openModal({content: <>Test</>}))
+    }, [dispatch])
 
     useEffect(() => {
         if (isAdmin) return;
@@ -119,6 +137,9 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
             <div
                 id={`comment-${comment.id}`}
                 className={`${styles.comment} ${comment.on_comment ? styles.comment_reply : ''}`}
+                style={{
+                    opacity: removePending ? .3 : undefined,
+                }}
             >
                 <div className={styles.comment__avatar}>
                     <img
@@ -158,8 +179,9 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             className={styles.comment__likes}
                             style={{ opacity: editedOpacity }}
                             disabled={showEditForm}
+                            onClick={handleLike}
                         >
-                            <LikeIcon size={26} fill={liked ? '#D78778' : '#DFD9C2'} />
+                            <LikeIcon size={26} liked={liked} />
                             {comment.likes?.length ? <span>{comment.likes.length}</span> : null}
                         </button>
                         {isShowReply ? (
@@ -181,6 +203,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             title="Пожаловаться"
                             style={{ opacity: editedOpacity }}
                             disabled={showEditForm || showReplyForm}
+                            onClick={handleCompliant}
                         >
                             <ComplaintIcon size={20} fill="#bbb7a7" />
                         </button>
