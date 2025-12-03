@@ -17,6 +17,7 @@ import { LoaderSpinnerIcon } from '../../icons/loader';
 import { openModal } from '../../../services/modal/slice';
 import { AttachModal } from '../../modals/attach';
 import { animateCloseModal } from '../../../services/modal/actions';
+import { CloseIcon } from '../../icons/close';
 
 type TEditorEventHandler<K extends keyof Events.EditorEventMap> = EventHandler<Events.EditorEventMap[K]>;
 
@@ -123,8 +124,20 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
     }, [attach, dispatch])
 
     const handleAttachClick = useCallback(() => {
-        dispatch(openModal({content: (<AttachModal multiple onSubmit={handleAttachSubmit} />)}));
-    }, [dispatch, handleAttachSubmit])
+        if(attach.length >= 10) return;
+
+        dispatch(openModal({content: (
+            <AttachModal
+                multiple 
+                onSubmit={handleAttachSubmit} 
+                attachLimit={10 - attach.length}
+            />
+        )}));
+    }, [attach.length, dispatch, handleAttachSubmit])
+
+    const handleAttachRemove = useCallback((id: number) => {
+        setAttach(attach.filter(item => item.id !== id));
+    }, [attach])
 
     return (
         <div
@@ -139,8 +152,11 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             ) : null}
             {attach.length ? (
                 <div className={styles.attach}>
-                    {attach.map((item) => (
-                        <div className={styles.attach__item} key={`editor_attach-${item.id}`}>
+                    {attach.map((item, i) => (
+                        <div className={styles.attach__item} key={`editor_attach_${i}-${item.id}`}>
+                            <button className={styles.attach__item__remove} type="button" onClick={() => handleAttachRemove(item.id)}>
+                                <CloseIcon size={10} fill="#fff" />
+                            </button>
                             <img src={`${HostURL}${item.url}`} alt={`Image ${item.id}`} />
                         </div>
                     ))}

@@ -54,13 +54,31 @@
 }
 
 .attach__item{
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .attach__item img{
+    position: relative;
+    z-index: 1;
     height: 60px;
     width: auto;
-    border-radius: 6px;
+    border-radius: 6px 20px 6px 6px;
+    background-color: #e3e3e3;
+}
+
+.attach__item__remove{
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    background-color: #d78778;
+    border: 1px solid #fff;
 }

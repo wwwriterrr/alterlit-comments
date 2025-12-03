@@ -188,9 +188,13 @@ export const CommentsUserAutocomplete = createAsyncThunk(
 
 export const CommentsFetchImages = createAsyncThunk(
     'comments/fetchImages',
-    async ({limit=21, signal}: {limit?: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+    async ({limit=21, lastId, signal}: {limit?: number, lastId?: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
         try{
             const url = new URL(`${ApiURL}images/?limit=${limit}`);
+
+            if(lastId){
+                url.searchParams.set('last_id', `${lastId}`);
+            }
 
             const state = getState() as { auth: { user: IAuthUser | null } };
             const token = state.auth.user?.access || '';

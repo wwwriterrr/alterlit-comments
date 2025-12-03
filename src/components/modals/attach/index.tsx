@@ -4,6 +4,7 @@ import { AttachModalSkeleton } from './skeleton';
 import { useAppDispatch } from '../../../services/store';
 import { CommentsFetchImages } from '../../../services/comments/actions';
 import { HostURL } from '../../../core/constants';
+import { LoaderSpinnerIcon } from '../../icons/loader';
 
 type TSubmitHandler = (images: IAppImage[]) => void;
 type TClickHandler = (item: IAppImage) => void;
@@ -43,9 +44,11 @@ type TProps = {
     attachLimit?: number,
 }
 
-export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Прикрепить', onSubmit, attachLimit=10 }) => {
+export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Прикрепить', onSubmit, attachLimit = 10 }) => {
     const [items, setItems] = useState<IAppImage[]>([]);
+    const [more, setMore] = useState<boolean>(false);
     const [pending, setPending] = useState<boolean>(false);
+    const [morePending, setMorePending] = useState<boolean>(false);
     const [selected, setSelected] = useState<IAppImage[]>([]);
 
     const dispatch = useAppDispatch();
@@ -53,19 +56,19 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
     const clickHandler = useCallback((item: IAppImage) => {
         const exist = selected.find(i => i.id === item.id);
 
-        if(exist){
+        if (exist) {
             setSelected(oldItems => {
                 const newItems = Array.from(oldItems);
                 const index = newItems.indexOf(exist);
                 newItems.splice(index, 1);
                 return newItems;
             })
-        }else{
-            if(selected.length === attachLimit) return;
+        } else {
+            if (selected.length === attachLimit) return;
 
-            if(multiple){
+            if (multiple) {
                 setSelected([...selected, item]);
-            }else{
+            } else {
                 setSelected([item]);
             }
         }
@@ -77,6 +80,19 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
 
     const submitDisabled = useMemo(() => selected.length > attachLimit || selected.length === 0, [selected.length, attachLimit])
 
+    const moreClickHandler = useCallback(() => {
+        if (!more) return;
+
+        setMorePending(true);
+        dispatch(CommentsFetchImages({ lastId: items[items.length - 1].id }))
+            .unwrap()
+            .then(data => {
+                setItems([...items, ...data.images]);
+                setMore(data.more);
+            })
+            .finally(() => setMorePending(false))
+    }, [dispatch, items, more])
+
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
@@ -87,6 +103,7 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
             .unwrap()
             .then(data => {
                 setItems(data.images);
+                setMore(data.more)
             })
             .finally(() => setPending(false))
 
@@ -109,12 +126,21 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
                             onItemClick={clickHandler}
                         />
                     ))}
+                    {more ? (
+                        <button type="button" onClick={moreClickHandler}>
+                            {morePending ? (
+                                <LoaderSpinnerIcon size={24} fill='#444' />
+                            ) : (
+                                <>...</>
+                            )}
+                        </button>
+                    ) : null}
                 </div>
             )}
             <div className={styles.manage}>
-                <button 
-                    className={styles.submitBtn} 
-                    type="button" 
+                <button
+                    className={styles.submitBtn}
+                    type="button"
                     onClick={handleSubmit}
                     disabled={submitDisabled}
                 >{buttonLabel}</button>
