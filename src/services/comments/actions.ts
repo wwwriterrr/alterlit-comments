@@ -48,31 +48,43 @@ export const CommentsSend = createAsyncThunk(
         replyTo?: number;
         editId?: number;
         images?: number[];
-    }, { rejectWithValue, getState }) => {
+    }, { 
+        rejectWithValue, 
+        // getState,
+        dispatch,
+    }) => {
         try {
             let url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
             if (editId) url = new URL(`${ApiURL}comment/${editId}/`);
 
-            const state = getState() as { auth: { user: IAuthUser | null } };
-            const token = state.auth.user?.access || '';
+            // const state = getState() as { auth: { user: IAuthUser | null } };
+            // const token = state.auth.user?.access || '';
 
-            if (!token) {
-                return rejectWithValue('No auth token');
-            }
+            // if (!token) {
+            //     return rejectWithValue('No auth token');
+            // }
 
             const bodyData: { content: string, reply_to?: number, edit_id?: number, images: number[] } = { content, images: [] };
             if (replyTo) bodyData['reply_to'] = replyTo;
             if (editId) bodyData['edit_id'] = editId;
             if (images.length) bodyData['images'] = images;
 
-            const response = await fetch(url, {
+            // const response = await fetch(url, {
+            //     method: editId ? 'PATCH' : 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${token}`,
+            //     },
+            //     body: JSON.stringify(bodyData),
+            // });
+
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
                 method: editId ? 'PATCH' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify(bodyData),
-            });
+            })
 
             if (!response.ok) {
                 return rejectWithValue('Failed to send comment');
@@ -87,26 +99,39 @@ export const CommentsSend = createAsyncThunk(
 
 export const CommentsRemove = createAsyncThunk(
     'comments/remove',
-    async ({commentId, signal}: {commentId: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+    async ({commentId, signal}: {commentId: number, signal?: AbortSignal}, {
+        rejectWithValue, 
+        // getState,
+        dispatch,
+    }) => {
         try{
             const url = new URL(`${ApiURL}comment/${commentId}/`);
 
-            const state = getState() as { auth: { user: IAuthUser | null } };
-            const token = state.auth.user?.access || '';
+            // const state = getState() as { auth: { user: IAuthUser | null } };
+            // const token = state.auth.user?.access || '';
 
-            if (!token) {
-                return rejectWithValue('No auth token');
-            }
+            // if (!token) {
+            //     return rejectWithValue('No auth token');
+            // }
 
-            const response = await fetch(url, {
+            // const response = await fetch(url, {
+            //     method: 'DELETE',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Accept': 'application/json',
+            //         'Authorization': `Bearer ${token}`,
+            //     },
+            //     signal,
+            // });
+
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 signal,
-            });
+            })
 
             if (!response.ok) {
                 return rejectWithValue('Failed to remove comment');
