@@ -91,7 +91,7 @@ export const CommentsSlice = createSlice({
                 } else {
                     // Обновляем комментарий верхнего уровня
                     state.comments = state.comments.map((item) =>
-                        item.id === updatedComment.id ? updatedComment : item
+                        item.id === updatedComment.id ? {...updatedComment, reply: item.reply} : item
                     );
                 }
             } else if (action.payload.message.type === 'remove_comment') {

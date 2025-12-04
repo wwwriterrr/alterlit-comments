@@ -13,6 +13,7 @@ import { TrashIcon } from '../icons/trash';
 import { CommentForm } from '../forms/newComment';
 import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
 import { openModal } from '../../services/modal/slice';
+import { SupportModal } from '../modals/support';
 
 const DELTA = 5 * 60 * 1000;
 
@@ -86,6 +87,21 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         [comment.dt]
     );
 
+    const dtModified = useMemo(
+        () => {
+            if(!comment.dt_modified) return null;
+
+            return new Date(`${comment.dt_modified}+03:00`).toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            })
+        },
+        [comment]
+    );
+
     const handleReply = useCallback(() => {
         setShowEditForm(false);
         setShowReplyForm(!showReplyForm);
@@ -113,8 +129,8 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     }, [comment.id, dispatch])
 
     const handleCompliant = useCallback(() => {
-        dispatch(openModal({content: <>Test</>}))
-    }, [dispatch])
+        dispatch(openModal({content: (<SupportModal commentId={comment.id} />)}));
+    }, [dispatch, comment.id])
 
     useEffect(() => {
         if (isAdmin) return;
@@ -162,9 +178,10 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             {comment.images.map((image) => (
                                 <img
                                     key={`comment-image-${image.id}`}
-                                    className={styles.comment__attach__item}
+                                    className={`${styles.comment__attach__item} to-view`}
                                     src={`${HostURL}${image.url}`}
                                     alt={`Comment image ${image.id}`}
+                                    data-fullsrc={`${HostURL}${image.url}`}
                                 />
                             ))}
                         </div>
@@ -233,6 +250,11 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             </span>
                         ) : null}
                     </div>
+                    {dtModified ? (
+                        <div className={styles.comment__modified}>
+                            {`Изм: ${dtModified}`}
+                        </div>
+                    ) : null}
                     {comment.reply && comment.reply.length ? (
                         <button className={styles.comment__showReply} onClick={handleShowReply}>
                             {showReply ? 'Скрыть' : 'Показать'} ответы {!showReply ? `(${comment.reply.length})` : ''}
@@ -247,6 +269,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     style={{
                         paddingLeft: comment.on_comment ? 60 : undefined,
                     }}
+                    onSuccess={() => {setShowEditForm(false)}}
                 />
             ) : null}
             {comment.reply && comment.reply.length && showReply ? (

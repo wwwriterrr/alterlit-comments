@@ -5,6 +5,7 @@ import { useAppDispatch } from '../../../services/store';
 import { CommentsFetchImages } from '../../../services/comments/actions';
 import { HostURL } from '../../../core/constants';
 import { LoaderSpinnerIcon } from '../../icons/loader';
+import { ErrorIcon } from '../../icons/error';
 
 type TSubmitHandler = (images: IAppImage[]) => void;
 type TClickHandler = (item: IAppImage) => void;
@@ -48,6 +49,7 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
     const [items, setItems] = useState<IAppImage[]>([]);
     const [more, setMore] = useState<boolean>(false);
     const [pending, setPending] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
     const [morePending, setMorePending] = useState<boolean>(false);
     const [selected, setSelected] = useState<IAppImage[]>([]);
 
@@ -98,53 +100,70 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
         const signal = controller.signal;
 
         // eslint-disable-next-line react-hooks/set-state-in-effect
+        setError(null);
         setPending(true);
         dispatch(CommentsFetchImages({ signal }))
             .unwrap()
             .then(data => {
                 setItems(data.images);
-                setMore(data.more)
+                setMore(data.more);
+                setError(null);
+            })
+            .catch(() => {
+                setError('Возникла непредвиденная ошибка. Повторите попытку позже.')
             })
             .finally(() => setPending(false))
 
         return () => {
             if (!signal.aborted) controller.abort();
+            setError(null);
         }
     }, [])
 
     return (
         <div className={styles.wrap}>
-            {pending ? (
-                <AttachModalSkeleton />
-            ) : (
-                <div className={styles.list}>
-                    {items.map(item => (
-                        <AttachItem
-                            item={item}
-                            selected={selected}
-                            key={`attach_image-${item.id}`}
-                            onItemClick={clickHandler}
-                        />
-                    ))}
-                    {more ? (
-                        <button type="button" onClick={moreClickHandler}>
-                            {morePending ? (
-                                <LoaderSpinnerIcon size={24} fill='#444' />
-                            ) : (
-                                <>...</>
-                            )}
-                        </button>
-                    ) : null}
+            {error ? (
+                <div className={styles.error}>
+                    <ErrorIcon size={80} fill="#D78778" />
+                    <span>{error}</span>
                 </div>
-            )}
-            <div className={styles.manage}>
-                <button
-                    className={styles.submitBtn}
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitDisabled}
-                >{buttonLabel}</button>
-            </div>
+            ) : (
+                <>
+                    {pending ? (
+                        <AttachModalSkeleton />
+                    ) : (
+                        <div className={styles.list}>
+                            {items.map(item => (
+                                <AttachItem
+                                    item={item}
+                                    selected={selected}
+                                    key={`attach_image-${item.id}`}
+                                    onItemClick={clickHandler}
+                                />
+                            ))}
+                            {more ? (
+                                <button type="button" className={styles.moreBtn} onClick={moreClickHandler}>
+                                    {morePending ? (
+                                        <LoaderSpinnerIcon size={24} fill='#444' />
+                                    ) : (
+                                        <>...</>
+                                    )}
+                                </button>
+                            ) : null}
+                        </div>
+                    )}
+                    <div className={styles.manage}>
+                        <div className={styles.manage__text}>
+                            {attachLimit ? `Выберите не более ${attachLimit} объектов` : null}
+                        </div>
+                        <button
+                            className={styles.submitBtn}
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={submitDisabled}
+                        >{buttonLabel}</button>
+                    </div>
+                </>)}
         </div>
     )
 }

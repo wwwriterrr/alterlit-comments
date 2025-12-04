@@ -64,7 +64,7 @@ export const CommentsSend = createAsyncThunk(
             if (images.length) bodyData['images'] = images;
 
             const response = await fetch(url, {
-                method: 'POST',
+                method: editId ? 'PATCH' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
@@ -219,6 +219,43 @@ export const CommentsFetchImages = createAsyncThunk(
             const data: {images: IAppImage[], more: boolean} = await response.json();
 
             return data;
+        } catch (err) {
+            return rejectWithValue(err);
+        }
+    }
+)
+
+export const CommentComplaint = createAsyncThunk(
+    'comment/complaint',
+    async ({data, signal}: {data: FormData, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+        try{
+            const url = new URL(`${ApiURL}support/task/`);
+
+            const email = data.get('email');
+
+            const headers: HeadersInit = {
+                'Accept': 'application/json',
+                // 'Content-Type': 'multipart/form-data',
+            }
+
+            if(!email){
+                const state = getState() as { auth: { user: IAuthUser | null } };
+                const token = state.auth.user?.access || '';
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers,
+                signal,
+                body: data,
+            });
+
+            if (!response.ok) {
+                return rejectWithValue('Failed with send support message');
+            }
+
+            return;
         } catch (err) {
             return rejectWithValue(err);
         }

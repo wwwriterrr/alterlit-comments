@@ -86,7 +86,8 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             images: attach.reduce((acc, item) => {
                 acc.push(item.id);
                 return acc;
-            }, [] as number[])
+            }, [] as number[]),
+            editId,
         }))
             .unwrap()
             .then(() => {
@@ -192,9 +193,9 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                         // quickbars_insert_toolbar: 'emoticons',
                         quickbars_insert_toolbar: false,
                         quickbars_selection_toolbar: 'bold italic underline | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull',
-                        valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank]',
+                        valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style]',
                         valid_styles: {
-                            '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding',
+                            '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding,background-color,',
                         },
                         // forced_root_block: 'div',
                         content_style: `
@@ -213,6 +214,15 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                             a{
                                 color: #0079f0;
                                 text-decoration: underline;
+                            }
+                            blockquote{
+                                margin: 0 0 10px 0;
+                                padding: 10px 20px;
+                                border-left: 5px solid #dfd9c2;
+                            }
+
+                            blockquote:last-child{
+                                margin: 0;
                             }
                         `,
                         auto_focus: true,

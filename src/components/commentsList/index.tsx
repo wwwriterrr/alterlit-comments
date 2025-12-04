@@ -6,9 +6,11 @@ import { CommentsFetch, commentsWsConnect, commentsWsDisconnect } from '../../se
 import { WsURL } from '../../core/constants';
 import { getComments } from '../../services/comments/slice';
 import { Comment } from './item';
+import { LoaderSpinnerIcon } from '../icons/loader';
 
 export const CommentsList: FC = () => {
     const [pending, setPending] = useState<boolean>(false);
+    const [pendingMore, setPendingMore] = useState<boolean>(false);
 
     const { postId } = useParams();
 
@@ -18,15 +20,17 @@ export const CommentsList: FC = () => {
     const commentsAfterExist = useAppSelector((state) => state.comments.afterExist);
 
     const handleMore = useCallback(() => {
-        if(!commentsAfterExist) return;
-        if(!postId) return;
+        if (!commentsAfterExist) return;
+        if (!postId) return;
 
+        setPendingMore(true);
         dispatch(CommentsFetch({
-            instanceId: postId, 
-            dispatchMethod: 'add', 
+            instanceId: postId,
+            dispatchMethod: 'add',
             type: 'post',
-            filters: {date__lt: comments[0].dt},
+            filters: { date__lt: comments[0].dt },
         }))
+            .finally(() => setPendingMore(false))
     }, [dispatch, commentsAfterExist, postId, comments])
 
     useEffect(() => {
@@ -82,7 +86,13 @@ export const CommentsList: FC = () => {
                 <>
                     {comments.length ? (
                         <div className={styles.list}>
-                            {commentsAfterExist ? <button onClick={handleMore}>Предыдущие комментарии</button> : null}
+                            {commentsAfterExist ? (
+                                <button className={styles.moreBtn} onClick={handleMore}>
+                                    {pendingMore ? (
+                                        <LoaderSpinnerIcon size={24} fill="#444" />
+                                    ) : 'Предыдущие комментарии'}
+                                </button>
+                            ) : null}
                             {comments.map((item) => (
                                 <Comment comment={item} key={`comment-${item.id}`} />
                             ))}

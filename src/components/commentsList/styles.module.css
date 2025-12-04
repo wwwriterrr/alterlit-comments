@@ -10,6 +10,13 @@
     font-size: 16px;
 }
 
+.moreBtn{
+    display: flex;
+    color: var(--link-color);
+    text-decoration: underline;
+    font-size: 16px;
+}
+
 .comment{
     position: relative;
     display: grid;
@@ -67,6 +74,13 @@
 }
 
 .comment__dt{
+    font-size: 14px;
+    font-weight: 400;
+    opacity: .5;
+}
+
+.comment__modified{
+    font-size: 14px;
     font-weight: 400;
     opacity: .5;
 }
@@ -80,6 +94,16 @@
 }
 
 .comment__content p:last-child{
+    margin: 0;
+}
+
+.comment__content blockquote{
+    margin: 0 0 10px 0;
+    padding: 10px 20px;
+    border-left: 5px solid #dfd9c2;
+}
+
+.comment__content blockquote:last-child{
     margin: 0;
 }
 
@@ -121,6 +145,8 @@
 .comment__attach__item{
     height: 140px;
     width: auto;
+    background-color: #e3e3e3;
+    border-radius: 6px;
 }
 
 .comment__timer{

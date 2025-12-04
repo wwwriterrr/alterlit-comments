@@ -12,6 +12,14 @@ const AuthGetPostToken = () => {
     return data;
 }
 
+const AuthSetPostToken = (access: string, refresh: string) => {
+    const postToken = AuthGetPostToken();
+    if(!postToken) return;
+
+    const newPostToken = btoa(JSON.stringify({...postToken, access, refresh}));
+    localStorage.setItem('post_token', newPostToken);
+}
+
 export const AuthCheckUser = createAsyncThunk(
     'auth/checkUser',
     async (_, { rejectWithValue, dispatch }) => {
@@ -67,11 +75,7 @@ export const AuthRefreshToken = createAsyncThunk(
 
             dispatch(setAuthCredentials({access: data.access, refresh: data.refresh}));
 
-            const postToken = AuthGetPostToken();
-            if(postToken){
-                const newPostToken = btoa(JSON.stringify({...postToken, access: data.access, refresh: data.refresh}));
-                localStorage.setItem('post_token', newPostToken);
-            }
+            AuthSetPostToken(data.access, data.refresh);
 
             return;
         } catch (err) {

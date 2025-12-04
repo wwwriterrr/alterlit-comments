@@ -37,6 +37,7 @@ declare global {
     interface IComment {
         id: number;
         dt: string | number;
+        dt_modified: string | number | null,
         author: IUser;
         content: string;
         images?: ICommentImage[];
