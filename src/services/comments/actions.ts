@@ -193,22 +193,25 @@ export const CommentsLike = createAsyncThunk(
 
 export const CommentsUserAutocomplete = createAsyncThunk(
     'commens/autocomplete/users',
-    async ({q, signal}: {q: string, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+    async ({q, signal}: {q: string, signal?: AbortSignal}, {
+        rejectWithValue, 
+        // getState,
+        dispatch,
+    }) => {
         try{
             const url = new URL(`${ApiURL}autocomplete/users/?q=${q}`);
 
-            const state = getState() as { auth: { user: IAuthUser | null } };
-            const token = state.auth.user?.access || '';
+            // const state = getState() as { auth: { user: IAuthUser | null } };
+            // const token = state.auth.user?.access || '';
 
-            if (!token) {
-                return rejectWithValue('No auth token');
-            }
+            // if (!token) {
+            //     return rejectWithValue('No auth token');
+            // }
 
-            const response = await fetch(url, {
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 signal,
             });
@@ -316,16 +319,20 @@ export const CommentComplaint = createAsyncThunk(
 
 export const CommentUpload = createAsyncThunk(
     'comment/upload',
-    async ({files, signal}: {files: File[], signal?: AbortSignal}, {rejectWithValue, getState}) => {
+    async ({files, signal}: {files: File[], signal?: AbortSignal}, {
+        rejectWithValue, 
+        // getState,
+        dispatch,
+    }) => {
         try{
             const url = new URL(`${ApiURL}images/`);
 
-            const state = getState() as { auth: { user: IAuthUser | null } };
-            const token = state.auth.user?.access || '';
+            // const state = getState() as { auth: { user: IAuthUser | null } };
+            // const token = state.auth.user?.access || '';
 
-            if (!token) {
-                return rejectWithValue('No auth token');
-            }
+            // if (!token) {
+            //     return rejectWithValue('No auth token');
+            // }
 
             const data = new FormData();
 
@@ -333,11 +340,10 @@ export const CommentUpload = createAsyncThunk(
                 data.append(`attach-${crypto.randomUUID()}`, file);
             })
 
-            const response = await fetch(url, {
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 body: data,
                 signal,
