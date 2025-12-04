@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { setAuthCredentials, setUser } from "./slice";
 import { ApiURL } from "../../core/constants";
+import type { AppDispatch } from "../store";
 
 const AuthGetPostToken = () => {
     const token = localStorage.getItem('post_token');
@@ -18,6 +19,47 @@ const AuthSetPostToken = (access: string, refresh: string) => {
 
     const newPostToken = btoa(JSON.stringify({...postToken, access, refresh}));
     localStorage.setItem('post_token', newPostToken);
+}
+
+export const fetchWithAuthorization = async (dispatch: AppDispatch, input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers as HeadersInit | undefined);
+    const postToken = AuthGetPostToken();
+    
+    if(!postToken?.access || !postToken?.refresh){
+        return Promise.reject('Токен авторизации не найден');
+    }
+
+    headers.set('Authorization', `Bearer ${postToken.access}`);
+
+    const firstResponse = await fetch(input, {...init, headers});
+
+    if(firstResponse.status !== 401){
+        return firstResponse;
+    }
+
+    const refreshResponse = await fetch(`${ApiURL}token/refresh/`, {
+        method: 'post',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ refresh: postToken.refresh }),
+    })
+
+    if(!refreshResponse.ok){
+        return Promise.reject('Не полуилось обновить токен')
+    }
+
+    const data: {access: string, refresh: string} = await refreshResponse.json();
+
+    AuthSetPostToken(data.access, data.refresh);
+    dispatch(setAuthCredentials({access: data.access, refresh: data.refresh}));
+
+    headers.set('Authorization', `Bearer ${data.access}`);
+
+    const secondResponse = await fetch(input, {...init, headers});
+
+    return secondResponse;
 }
 
 export const AuthCheckUser = createAsyncThunk(

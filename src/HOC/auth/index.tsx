@@ -20,7 +20,7 @@ export const AuthHOC:FC<{children: ReactElement}> = ({children}) => {
                         .unwrap()
                         .then(() => {console.log('Token updated')})
                         .catch(() => {clearInterval(intervalId)})
-                }, 60*1000*3)
+                }, 60*1000*7)
             })
 
         return () => {

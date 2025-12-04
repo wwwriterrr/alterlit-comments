@@ -1,6 +1,8 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ApiURL } from "../../core/constants";
 import { addComments, setComments, setCommentsAfterExist } from "./slice";
+import { fetchWithAuthorization } from "../auth/actions";
+import type { AppDispatch } from "../store";
 
 export const commentsWsConnect = createAction<string, 'FEED_CONNECT'>('FEED_CONNECT');
 
@@ -119,26 +121,39 @@ export const CommentsRemove = createAsyncThunk(
 
 export const CommentsLike = createAsyncThunk(
     'comments/Like',
-    async ({contentType='comment', objectId, signal}: {contentType?: string, objectId: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+    async ({contentType='comment', objectId, signal}: {contentType?: string, objectId: number, signal?: AbortSignal}, {
+        rejectWithValue, 
+        // getState,
+        dispatch,
+    }) => {
         try{
             const url = new URL(`${ApiURL}like/${contentType}/${objectId}/`);
 
-            const state = getState() as { auth: { user: IAuthUser | null } };
-            const token = state.auth.user?.access || '';
+            // const state = getState() as { auth: { user: IAuthUser | null } };
+            // const token = state.auth.user?.access || '';
 
-            if (!token) {
-                return rejectWithValue('No auth token');
-            }
+            // if (!token) {
+            //     return rejectWithValue('No auth token');
+            // }
 
-            const response = await fetch(url, {
+            // const response = await fetch(url, {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Accept': 'application/json',
+            //         'Authorization': `Bearer ${token}`,
+            //     },
+            //     signal,
+            // });
+
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 signal,
-            });
+            })
 
             if (!response.ok) {
                 return rejectWithValue('Failed like comment');
@@ -188,7 +203,11 @@ export const CommentsUserAutocomplete = createAsyncThunk(
 
 export const CommentsFetchImages = createAsyncThunk(
     'comments/fetchImages',
-    async ({limit=21, lastId, signal}: {limit?: number, lastId?: number, signal?: AbortSignal}, {rejectWithValue, getState}) => {
+    async ({limit=21, lastId, signal}: {limit?: number, lastId?: number, signal?: AbortSignal}, {
+        rejectWithValue, 
+        dispatch, 
+        // getState
+    }) => {
         try{
             const url = new URL(`${ApiURL}images/?limit=${limit}`);
 
@@ -196,21 +215,29 @@ export const CommentsFetchImages = createAsyncThunk(
                 url.searchParams.set('last_id', `${lastId}`);
             }
 
-            const state = getState() as { auth: { user: IAuthUser | null } };
-            const token = state.auth.user?.access || '';
+            // const state = getState() as { auth: { user: IAuthUser | null } };
+            // const token = state.auth.user?.access || '';
 
-            if (!token) {
-                return rejectWithValue('No auth token');
-            }
+            // if (!token) {
+            //     return rejectWithValue('No auth token');
+            // }
 
-            const response = await fetch(url, {
+            // const response = await fetch(url, {
+            //     method: 'GET',
+            //     headers: {
+            //         'Accept': 'application/json',
+            //         'Authorization': `Bearer ${token}`,
+            //     },
+            //     signal,
+            // });
+
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
                 signal,
-            });
+            })
 
             if (!response.ok) {
                 return rejectWithValue('Failed like comment');
@@ -257,6 +284,52 @@ export const CommentComplaint = createAsyncThunk(
 
             return;
         } catch (err) {
+            return rejectWithValue(err);
+        }
+    }
+)
+
+export const CommentUpload = createAsyncThunk(
+    'comment/upload',
+    async ({files, signal}: {files: File[], signal?: AbortSignal}, {rejectWithValue, getState}) => {
+        try{
+            const url = new URL(`${ApiURL}images/`);
+
+            const state = getState() as { auth: { user: IAuthUser | null } };
+            const token = state.auth.user?.access || '';
+
+            if (!token) {
+                return rejectWithValue('No auth token');
+            }
+
+            const data = new FormData();
+
+            files.map((file) => {
+                data.append(`attach-${crypto.randomUUID()}`, file);
+            })
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: data,
+                signal,
+            });
+
+            if (!response.ok) {
+                return rejectWithValue('Failed with upload images comment');
+            }
+
+            const responseData: {files: [string, IAppImage][], errors: [string, string][]} = await response.json();
+
+            if(!responseData.files.length){
+                return rejectWithValue('Ошибка загрузки');
+            }
+
+            return responseData.files;
+        } catch(err) {
             return rejectWithValue(err);
         }
     }

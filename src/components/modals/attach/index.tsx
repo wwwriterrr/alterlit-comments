@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState, type FC } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ChangeEventHandler, type FC } from 'react';
 import styles from './styles.module.css';
 import { AttachModalSkeleton } from './skeleton';
 import { useAppDispatch } from '../../../services/store';
-import { CommentsFetchImages } from '../../../services/comments/actions';
+import { CommentsFetchImages, CommentUpload } from '../../../services/comments/actions';
 import { HostURL } from '../../../core/constants';
 import { LoaderSpinnerIcon } from '../../icons/loader';
 import { ErrorIcon } from '../../icons/error';
+import { UploadIcon } from '../../icons/upload';
 
 type TSubmitHandler = (images: IAppImage[]) => void;
 type TClickHandler = (item: IAppImage) => void;
@@ -50,7 +51,9 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
     const [more, setMore] = useState<boolean>(false);
     const [pending, setPending] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [inlineError, setInlineError] = useState<string | null>(null);
     const [morePending, setMorePending] = useState<boolean>(false);
+    const [uploadPending, setUploadPending] = useState<boolean>(false);
     const [selected, setSelected] = useState<IAppImage[]>([]);
 
     const dispatch = useAppDispatch();
@@ -95,6 +98,30 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
             .finally(() => setMorePending(false))
     }, [dispatch, items, more])
 
+    const handleUpload = useCallback<ChangeEventHandler<HTMLInputElement>>((e) => {
+        const input = e.target as HTMLInputElement;
+        const files = input.files;
+
+        if(!files) return;
+
+        if(files?.length > 5){
+            setInlineError('Не больше 5 файлов');
+            setTimeout(() => setInlineError(null), 2000);
+            return;
+        }
+
+        console.log('upload', Array.from(files));
+
+        setUploadPending(true);
+        dispatch(CommentUpload({files: Array.from(files)}))
+            .unwrap()
+            .then(files => {
+                const newFiles = files.map(item => item[1]);
+                setItems([...newFiles, ...items]);
+            })
+            .finally(() => setUploadPending(false))
+    }, [dispatch, items])
+
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
@@ -132,7 +159,19 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
                     {pending ? (
                         <AttachModalSkeleton />
                     ) : (
+                        <>
+                        {inlineError ? (
+                            <div className={styles.inlineError}>{inlineError}</div>
+                        ) : null}
                         <div className={styles.list}>
+                            <label className={styles.uploadBtn} title="Загрузить файлы на сервер">
+                                <input type="file" multiple accept="image/*" style={{display: 'none'}} onChange={handleUpload} />
+                                {uploadPending ? (
+                                    <LoaderSpinnerIcon size={32} fill="#0079f0" />
+                                ) : (
+                                    <UploadIcon size={32} fill="#0079f0" />
+                                )}
+                            </label>
                             {items.map(item => (
                                 <AttachItem
                                     item={item}
@@ -151,6 +190,7 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
                                 </button>
                             ) : null}
                         </div>
+                        </>
                     )}
                     <div className={styles.manage}>
                         <div className={styles.manage__text}>
