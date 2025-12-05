@@ -23,8 +23,6 @@ export const Comments = () => {
     const permsChecked = useAppSelector(getCommentsPermsChecked);
     const user = useAppSelector(getUser);
 
-    console.log(perms);
-
     return (
         <div className={styles.wrap}>
             {permsChecked ? (
