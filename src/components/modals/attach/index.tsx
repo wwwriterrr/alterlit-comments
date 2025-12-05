@@ -102,9 +102,9 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
         const input = e.target as HTMLInputElement;
         const files = input.files;
 
-        if(!files) return;
+        if (!files) return;
 
-        if(files?.length > 5){
+        if (files?.length > 5) {
             setInlineError('Не больше 5 файлов');
             setTimeout(() => setInlineError(null), 2000);
             return;
@@ -113,7 +113,7 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
         console.log('upload', Array.from(files));
 
         setUploadPending(true);
-        dispatch(CommentUpload({files: Array.from(files)}))
+        dispatch(CommentUpload({ files: Array.from(files) }))
             .unwrap()
             .then(files => {
                 const newFiles = files.map(item => item[1]);
@@ -123,15 +123,16 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
     }, [dispatch, items])
 
     useEffect(() => {
+        let mounted = true;
         const controller = new AbortController();
         const signal = controller.signal;
+        
+        queueMicrotask(() => {if(mounted) setPending(true)});
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setError(null);
-        setPending(true);
         dispatch(CommentsFetchImages({ signal }))
             .unwrap()
             .then(data => {
+                if (!mounted) return;
                 setItems(data.images);
                 setMore(data.more);
                 setError(null);
@@ -142,68 +143,69 @@ export const AttachModal: FC<TProps> = ({ multiple = false, buttonLabel = 'Пр�
             .finally(() => setPending(false))
 
         return () => {
-            if (!signal.aborted) controller.abort();
-            setError(null);
+            mounted = false;
+            controller.abort();
         }
     }, [])
 
     return (
         <div className={styles.wrap}>
-            {error ? (
-                <div className={styles.error}>
-                    <ErrorIcon size={80} fill="#D78778" />
-                    <span>{error}</span>
-                </div>
+            {pending ? (
+                <AttachModalSkeleton />
             ) : (
                 <>
-                    {pending ? (
-                        <AttachModalSkeleton />
+                    {error ? (
+                        <div className={styles.error}>
+                            <ErrorIcon size={80} fill="#D78778" />
+                            <span>{error}</span>
+                        </div>
                     ) : (
                         <>
-                        {inlineError ? (
-                            <div className={styles.inlineError}>{inlineError}</div>
-                        ) : null}
-                        <div className={styles.list}>
-                            <label className={styles.uploadBtn} title="Загрузить файлы на сервер">
-                                <input type="file" multiple accept="image/*" style={{display: 'none'}} onChange={handleUpload} />
-                                {uploadPending ? (
-                                    <LoaderSpinnerIcon size={32} fill="#0079f0" />
-                                ) : (
-                                    <UploadIcon size={32} fill="#0079f0" />
-                                )}
-                            </label>
-                            {items.map(item => (
-                                <AttachItem
-                                    item={item}
-                                    selected={selected}
-                                    key={`attach_image-${item.id}`}
-                                    onItemClick={clickHandler}
-                                />
-                            ))}
-                            {more ? (
-                                <button type="button" className={styles.moreBtn} onClick={moreClickHandler}>
-                                    {morePending ? (
-                                        <LoaderSpinnerIcon size={24} fill='#444' />
-                                    ) : (
-                                        <>...</>
-                                    )}
-                                </button>
+                            {inlineError ? (
+                                <div className={styles.inlineError}>{inlineError}</div>
                             ) : null}
-                        </div>
+                            <div className={styles.list}>
+                                <label className={styles.uploadBtn} title="Загрузить файлы на сервер">
+                                    <input type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
+                                    {uploadPending ? (
+                                        <LoaderSpinnerIcon size={32} fill="#0079f0" />
+                                    ) : (
+                                        <UploadIcon size={32} fill="#0079f0" />
+                                    )}
+                                </label>
+                                {items.map(item => (
+                                    <AttachItem
+                                        item={item}
+                                        selected={selected}
+                                        key={`attach_image-${item.id}`}
+                                        onItemClick={clickHandler}
+                                    />
+                                ))}
+                                {more ? (
+                                    <button type="button" className={styles.moreBtn} onClick={moreClickHandler}>
+                                        {morePending ? (
+                                            <LoaderSpinnerIcon size={24} fill='#444' />
+                                        ) : (
+                                            <>...</>
+                                        )}
+                                    </button>
+                                ) : null}
+                            </div>
+                            <div className={styles.manage}>
+                                <div className={styles.manage__text}>
+                                    {attachLimit ? `Выберите не более ${attachLimit} объектов` : null}
+                                </div>
+                                <button
+                                    className={styles.submitBtn}
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={submitDisabled}
+                                >{buttonLabel}</button>
+                            </div>
                         </>
                     )}
-                    <div className={styles.manage}>
-                        <div className={styles.manage__text}>
-                            {attachLimit ? `Выберите не более ${attachLimit} объектов` : null}
-                        </div>
-                        <button
-                            className={styles.submitBtn}
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={submitDisabled}
-                        >{buttonLabel}</button>
-                    </div>
-                </>)}
+                </>
+            )}
         </div>
     )
 }

@@ -1,9 +1,6 @@
 import { useCallback, useRef, useState, type CSSProperties, type FC } from 'react';
 import styles from './styles.module.css';
 import { Editor } from '@tinymce/tinymce-react';
-// import { Editor as TinyMCEEditor } from 'tinymce';
-import { type EventHandler } from '@tinymce/tinymce-react/lib/cjs/main/ts/Events';
-// import { type Events } from 'tinymce';
 import { getLastWord } from './utils';
 import { SendIcon } from '../../icons/send';
 import { AddImageIcon } from '../../icons/addImage';
@@ -18,8 +15,7 @@ import { openModal } from '../../../services/modal/slice';
 import { AttachModal } from '../../modals/attach';
 import { animateCloseModal } from '../../../services/modal/actions';
 import { CloseIcon } from '../../icons/close';
-
-type TEditorEventHandler<K extends keyof Events.EditorEventMap> = EventHandler<Events.EditorEventMap[K]>;
+import type { Editor as TinyMCEEditor } from 'tinymce';
 
 type TProps = {
     replyTo?: number;
@@ -42,7 +38,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
 
     const dispatch = useAppDispatch();
 
-    const editorRef = useRef(null);
+    const editorRef = useRef<TinyMCEEditor>(null);
 
     const changeHandler = (newContent: string) => {
         setValue(newContent);
@@ -59,7 +55,8 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
         }
     }
 
-    const initHindler: TEditorEventHandler<'init'> = (_, editor) => {
+    const initHindler = (_: unknown, editor: TinyMCEEditor) => {
+        console.log(_);
         editorRef.current = editor;
     }
 
@@ -110,8 +107,10 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
         setTimeout(() => {
             try {
                 const node = editorRef.current?.dom.select(`a[href="${href}"] + span`);
-                editorRef.current?.selection.setCursorLocation(node[0].firstChild, 1);
-                editorRef.current?.focus();
+                if(node){
+                    editorRef.current?.selection.setCursorLocation(node[0].firstChild as Node, 1);
+                    editorRef.current?.focus();
+                }
             } catch (err) {
                 console.log('Error with set cursor', err);
             }
