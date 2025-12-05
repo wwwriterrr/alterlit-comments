@@ -8,7 +8,6 @@ import { type FC } from 'react';
 import { WarningIcon } from '../../components/icons/warning';
 
 const PermsError: FC<{ msg: string }> = ({ msg }) => {
-    console.log(decodeURI(`${msg}`));
     return (
         <div className={styles.permsError}>
             <div className={styles.permsError__wrap}>
