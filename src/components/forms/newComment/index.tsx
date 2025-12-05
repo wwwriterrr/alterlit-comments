@@ -1,14 +1,14 @@
 import { useCallback, useRef, useState, type CSSProperties, type FC } from 'react';
 import styles from './styles.module.css';
 import { Editor } from '@tinymce/tinymce-react';
-import { getLastWord } from './utils';
+// import { getLastWord } from './utils';
 import { SendIcon } from '../../icons/send';
 import { AddImageIcon } from '../../icons/addImage';
 import { useAppDispatch, useAppSelector } from '../../../services/store';
 import { getComment, type IInitialState } from '../../../services/comments/slice';
 import { HostURL } from '../../../core/constants';
-import { CommentFormMention } from './mention';
-import { CommentsSend } from '../../../services/comments/actions';
+// import { CommentFormMention } from './mention';
+import { CommentsSend, CommentsUserAutocomplete } from '../../../services/comments/actions';
 import { useParams } from 'react-router-dom';
 import { LoaderSpinnerIcon } from '../../icons/loader';
 import { openModal } from '../../../services/modal/slice';
@@ -25,13 +25,37 @@ type TProps = {
     onSuccess?: () => void;
 }
 
+type TTinyAutocompleteItem = {
+    type: 'cardmenuitem',
+    value: string,
+    label: string,
+    items: {
+        type: 'cardcontainer',
+        direction: 'horizontal',
+        valign: 'middle',
+        items: [
+            {
+                type: 'cardimage',
+                src: string,
+                alt: string,
+                classes: ['autocomplete-av']
+            },
+            {
+                type: 'cardtext',
+                text: string
+            },
+
+        ]
+    }[],
+}
+
 export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onSuccess }) => {
     const comment = useAppSelector((state: { comments: IInitialState }) => getComment(state, editId || 0));
 
     const [value, setValue] = useState<string>(comment ? comment.content : '');
     const [attach, setAttach] = useState<ICommentImage[]>(comment ? comment.images || [] : []);
-    const [showMention, setShowMention] = useState<boolean>(false);
-    const [mentionQuery, setMentionQuery] = useState<string>('');
+    // const [showMention, setShowMention] = useState<boolean>(false);
+    // const [mentionQuery, setMentionQuery] = useState<string>('');
     const [pending, setPending] = useState<boolean>(false);
 
     const { postId } = useParams();
@@ -43,16 +67,16 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
     const changeHandler = (newContent: string) => {
         setValue(newContent);
 
-        const lastWord = getLastWord();
-        if (/\B@\w*/.test(lastWord)) {
-            // Show mention
-            setShowMention(true);
-            setMentionQuery(lastWord);
-        } else {
-            // Close mention
-            setShowMention(false);
-            setMentionQuery('');
-        }
+        // const lastWord = getLastWord();
+        // if (/\B@\w*/.test(lastWord)) {
+        //     // Show mention
+        //     setShowMention(true);
+        //     setMentionQuery(lastWord);
+        // } else {
+        //     // Close mention
+        //     setShowMention(false);
+        //     setMentionQuery('');
+        // }
     }
 
     const initHindler = (_: unknown, editor: TinyMCEEditor) => {
@@ -95,28 +119,28 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             .finally(() => setPending(false));
     }
 
-    const handleMentionSelect = useCallback((user: TAutocompleteUser) => {
-        if (!editorRef.current) return;
+    // const handleMentionSelect = useCallback((user: TAutocompleteUser) => {
+    //     if (!editorRef.current) return;
 
-        const content = editorRef.current.getContent() as string;
-        const href = `${HostURL}/profile/${user.username}/`;
-        const newContent = content.replace(mentionQuery, `<a href="${href}">${user.name}</a><span>&nbsp;</span>`);
+    //     const content = editorRef.current.getContent() as string;
+    //     const href = `${HostURL}/profile/${user.username}/`;
+    //     const newContent = content.replace(mentionQuery, `<a href="${href}">${user.name}</a><span>&nbsp;</span>`);
 
-        setValue(newContent);
+    //     setValue(newContent);
 
-        setTimeout(() => {
-            try {
-                const node = editorRef.current?.dom.select(`a[href="${href}"] + span`);
-                if(node){
-                    editorRef.current?.selection.setCursorLocation(node[0].firstChild as Node, 1);
-                    editorRef.current?.focus();
-                }
-            } catch (err) {
-                console.log('Error with set cursor', err);
-            }
-        }, 100);
+    //     setTimeout(() => {
+    //         try {
+    //             const node = editorRef.current?.dom.select(`a[href="${href}"] + span`);
+    //             if (node) {
+    //                 editorRef.current?.selection.setCursorLocation(node[0].firstChild as Node, 1);
+    //                 editorRef.current?.focus();
+    //             }
+    //         } catch (err) {
+    //             console.log('Error with set cursor', err);
+    //         }
+    //     }, 100);
 
-    }, [mentionQuery])
+    // }, [mentionQuery])
 
     const handleAttachSubmit = useCallback((images: IAppImage[]) => {
         setAttach([...attach, ...images]);
@@ -124,15 +148,17 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
     }, [attach, dispatch])
 
     const handleAttachClick = useCallback(() => {
-        if(attach.length >= 10) return;
+        if (attach.length >= 10) return;
 
-        dispatch(openModal({content: (
-            <AttachModal
-                multiple 
-                onSubmit={handleAttachSubmit} 
-                attachLimit={10 - attach.length}
-            />
-        )}));
+        dispatch(openModal({
+            content: (
+                <AttachModal
+                    multiple
+                    onSubmit={handleAttachSubmit}
+                    attachLimit={10 - attach.length}
+                />
+            )
+        }));
     }, [attach.length, dispatch, handleAttachSubmit])
 
     const handleAttachRemove = useCallback((id: number) => {
@@ -147,9 +173,9 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                 ...style,
             }}
         >
-            {showMention ? (
+            {/* {showMention ? (
                 <CommentFormMention query={mentionQuery.replace('@', '').replace(/\s+$/g, '')} onItemSelect={handleMentionSelect} />
-            ) : null}
+            ) : null} */}
             {attach.length ? (
                 <div className={styles.attach}>
                     {attach.map((item, i) => (
@@ -191,8 +217,8 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                         ],
                         // quickbars_insert_toolbar: 'emoticons',
                         quickbars_insert_toolbar: false,
-                        quickbars_selection_toolbar: 'bold italic underline | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull',
-                        valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style]',
+                        quickbars_selection_toolbar: 'bold italic underline strikethrough | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull | removeformat',
+                        valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style],s[style]',
                         valid_styles: {
                             '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding,background-color,',
                         },
@@ -225,6 +251,72 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                             }
                         `,
                         auto_focus: true,
+                        setup: (editor: TinyMCEEditor) => {
+                            const onAction = (autocompleteApi: { hide: () => void }, rng: Range, value: string) => {
+                                editor.selection.setRng(rng);
+                                editor.insertContent(value);
+                                autocompleteApi.hide();
+                            };
+
+                            let acTimer: number | null = null;
+                            let lastRequestId = 0;
+
+                            const debouncedFetch = (pattern: string) => {
+                                lastRequestId += 1;
+                                const requestId = lastRequestId;
+
+                                return new Promise<TTinyAutocompleteItem[]>(resolve => {
+                                    if (acTimer) window.clearTimeout(acTimer);
+                                    acTimer = window.setTimeout(async () => {
+                                        acTimer = null;
+                                        try {
+                                            const { objects } = await dispatch(CommentsUserAutocomplete({ q: pattern })).unwrap();
+                                            // если за это время пришёл новый запрос — отваливаем результат
+                                            if (requestId !== lastRequestId) {
+                                                resolve([]);
+                                                return;
+                                            }
+                                            const results = objects.map(item => ({
+                                                type: 'cardmenuitem' as const,
+                                                value: `<a href="${HostURL}/profile/${item.username}/" target="_blank">${item.name}</a>`,
+                                                label: item.name,
+                                                items: [
+                                                    {
+                                                        type: 'cardcontainer' as const,
+                                                        direction: 'horizontal' as const,
+                                                        valign: 'middle' as const,
+                                                        items: [
+                                                            {
+                                                                type: 'cardimage' as const,
+                                                                src: `${HostURL}${item.avatar}`,
+                                                                alt: item.name,
+                                                                classes: ['autocomplete-av']
+                                                            },
+                                                            {
+                                                                type: 'cardtext' as const,
+                                                                text: item.name
+                                                            },
+                                                        ]
+                                                    }
+                                                ]
+                                            } as TTinyAutocompleteItem));
+                                            resolve(results);
+                                        } catch (err) {
+                                            console.error('Error with user autocomplete', err)
+                                            resolve([]); // на ошибке возвращаем пустой список
+                                        }
+                                    }, 200);
+                                });
+                            };
+
+                            editor.ui.registry.addAutocompleter('specialchars', {
+                                trigger: '@',
+                                minChars: 1,
+                                columns: 'auto',
+                                onAction: onAction,
+                                fetch: (pattern) => debouncedFetch(pattern),
+                            })
+                        },
                     }}
                 />
             </div>
@@ -234,9 +326,9 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                 disabled={!value.trim() || pending}
             >
                 {pending ? (
-                    <LoaderSpinnerIcon size={24} fill="#000" />
+                    <LoaderSpinnerIcon size={24} fill="#fff" />
                 ) : (
-                    <SendIcon size={24} fill="#000" />
+                    <SendIcon size={24} fill="#fff" />
                 )}
             </button>
         </div>

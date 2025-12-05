@@ -7,3 +7,9 @@
     margin: 0 auto 0 auto;
     padding: 40px 0;
 }
+
+@media screen and (max-width: 900px) {
+    .wrap{
+        width: 100%;
+    }
+}

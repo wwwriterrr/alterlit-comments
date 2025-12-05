@@ -1,4 +1,12 @@
-.wrap{
+:global(.autocomplete-av) {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 4px 0 0 !important;
+}
+
+.wrap {
     position: relative;
     display: grid;
     grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / 60px 1fr 60px;
@@ -8,7 +16,7 @@
     margin: 0 auto; */
 }
 
-.area{
+.area {
     grid-area: area;
     padding: 10px;
     border-radius: 10px;
@@ -17,35 +25,37 @@
     overflow: auto;
 }
 
-.area > div{
+.area>div {
     min-height: 40px;
 }
 
-.btn{
+.btn {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 40px;
     height: 40px;
     border-radius: 50%;
+}
+
+.attachBtn {
+    grid-area: attach;
+    justify-self: end;
     background-color: #eeebde;
 }
 
-.attachBtn{
-    grid-area: attach;
-    justify-self: end;
-}
-
-.submitBtn{
+.submitBtn {
     grid-area: submit;
+    background-color: #0079f0;
 }
 
-.submitBtn:disabled{
+.submitBtn:disabled {
     cursor: not-allowed;
     opacity: 0.6;
+    background-color: #b5b5b5;
 }
 
-.attach{
+.attach {
     grid-area: alist;
     display: flex;
     flex-wrap: wrap;
@@ -53,14 +63,14 @@
     margin: 0 0 10px 0;
 }
 
-.attach__item{
+.attach__item {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.attach__item img{
+.attach__item img {
     position: relative;
     z-index: 1;
     height: 60px;
@@ -69,7 +79,7 @@
     background-color: #e3e3e3;
 }
 
-.attach__item__remove{
+.attach__item__remove {
     position: absolute;
     z-index: 2;
     right: 0;
@@ -81,4 +91,30 @@
     border-radius: 50%;
     background-color: #d78778;
     border: 1px solid #fff;
+}
+
+@media screen and (max-width: 600px) {
+    .wrap {
+        grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / auto 1fr auto;
+        gap: 0 10px;
+        padding: 0 14px;
+    }
+}
+
+@media screen and (max-width: 450px) {
+    .wrap {
+        gap: 0 6px;
+        padding: 0 10px;
+    }
+
+    .btn {
+        width: 30px;
+        height: 30px;
+        padding: 5px;
+    }
+
+    .btn>svg {
+        width: 100%;
+        height: 100%;
+    }
 }
