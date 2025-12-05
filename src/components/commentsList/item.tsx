@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FC } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
-import { getUser } from '../../services/auth/slice';
+import { getCommentsPerms, getUser } from '../../services/auth/slice';
 import styles from './styles.module.css';
 import { HostURL } from '../../core/constants';
 import { Link } from 'react-router-dom';
@@ -28,10 +28,11 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     const dispatch = useAppDispatch();
 
     const user = useAppSelector(getUser);
+    const perms = useAppSelector(getCommentsPerms);
 
     const isAdmin = useMemo(() => user?.perms.includes('admin'), [user]);
 
-    const isShowReply = useMemo(() => (user ? true : false), [user]);
+    const isShowReply = useMemo(() => (user && perms.comments_send ? true : false), [user, perms]);
 
     const isShowTimer = useMemo(() => {
         if(isAdmin) return false;

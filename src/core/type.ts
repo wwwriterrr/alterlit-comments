@@ -1,5 +1,12 @@
 
 declare global {
+    type TCommentsPerms = {
+        comments_list: boolean,
+        comments_send: boolean,
+        comments_list_detail: string,
+        comments_send_detail: string,
+    }
+
     interface IAuthUser {
         id: number,
         access: string,

@@ -1,7 +1,22 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { setAuthCredentials, setUser } from "./slice";
+import { setAuthCredentials, setCommentsPerms, setUser } from "./slice";
 import { ApiURL } from "../../core/constants";
 import type { AppDispatch } from "../store";
+
+const AuthGetCommentsPerms = () => {
+    const token = localStorage.getItem('comments_token');
+
+    if(!token) return null;
+
+    const data: {
+        comments_list: boolean,
+        comments_send: boolean,
+        comments_list_detail: string,
+        comments_send_detail: string,
+    } = JSON.parse(atob(token));
+
+    return data;
+}
 
 const AuthGetPostToken = () => {
     const token = localStorage.getItem('post_token');
@@ -66,6 +81,14 @@ export const AuthCheckUser = createAsyncThunk(
     'auth/checkUser',
     async (_, { rejectWithValue, dispatch }) => {
         try {
+            const perms = AuthGetCommentsPerms();
+
+            if(!perms){
+                return rejectWithValue('Post token is missing');
+            }
+
+            dispatch(setCommentsPerms(perms));
+
             const data = AuthGetPostToken();
 
             if (!data) {

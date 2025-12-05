@@ -8,6 +8,38 @@
     padding: 40px 0;
 }
 
+.loader{
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.permsError{
+    position: relative;
+}
+
+.permsError__wrap{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+    padding: 20px 30px;
+    border-radius: 8px;
+    background-color: #f0e5d2;
+}
+
+.permsError__text{
+    font-size: 18px;
+    opacity: .6;
+}
+
+.permsError__wrap > svg{
+    flex-shrink: 0;
+}
+
 @media screen and (max-width: 900px) {
     .wrap{
         width: 100%;
