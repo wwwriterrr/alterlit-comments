@@ -250,7 +250,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                                 margin: 0;
                             }
                         `,
-                        auto_focus: true,
+                        // auto_focus: true,
                         setup: (editor: TinyMCEEditor) => {
                             const onAction = (autocompleteApi: { hide: () => void }, rng: Range, value: string) => {
                                 editor.selection.setRng(rng);
