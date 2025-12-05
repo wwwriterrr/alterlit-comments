@@ -3,7 +3,6 @@ import {
     Routes,
     Route,
 } from 'react-router-dom';
-import './App.css'
 import { Comments } from './pages/index';
 import { Provider } from 'react-redux';
 import { store } from './services/store';

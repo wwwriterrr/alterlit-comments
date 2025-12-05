@@ -80,7 +80,6 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
     }
 
     const initHindler = (_: unknown, editor: TinyMCEEditor) => {
-        console.log(_);
         editorRef.current = editor;
     }
 
@@ -167,7 +166,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
 
     return (
         <div
-            className={`${styles.wrap} ${className}`}
+            className={`${styles.wrap} ${className ? className : ''}`}
             style={{
                 paddingLeft: replyTo ? 80 : undefined,
                 ...style,
@@ -195,7 +194,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             >
                 <AddImageIcon size={24} fill="#000" />
             </button>
-            <div className={styles.area} style={{
+            <div className={`alt-comment-form ${styles.area}`} style={{
                 borderColor: editId ? '#0079f0' : replyTo ? '#e3b287' : undefined
             }}>
                 <Editor
@@ -224,29 +223,29 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                         },
                         // forced_root_block: 'div',
                         content_style: `
-                            body{
+                            .alt-comment-form{
                                 font-size: 16px;
-                            } 
-                            p{
+                            }
+                            .alt-comment-form p{
                                 margin: 0 0 10px 0;
                             }
-                            p:last-child{
+                            .alt-comment-form p:last-child{
                                 margin-bottom: 0;
                             } 
-                            a[data-user]{
+                            .alt-comment-form a[data-user]{
                                 color: #0079f0;
                             } 
-                            a{
+                            .alt-comment-form a{
                                 color: #0079f0;
                                 text-decoration: underline;
                             }
-                            blockquote{
+                            .alt-comment-form blockquote{
                                 margin: 0 0 10px 0;
                                 padding: 10px 20px;
                                 border-left: 5px solid #dfd9c2;
                             }
 
-                            blockquote:last-child{
+                            .alt-comment-form blockquote:last-child{
                                 margin: 0;
                             }
                         `,

@@ -1,4 +1,4 @@
-.mention{
+.mention {
     position: absolute;
     bottom: calc(100% + 14px);
     left: 80px;
@@ -8,11 +8,9 @@
     border: 1px solid #000;
 }
 
-.empty{
+.empty {}
 
-}
-
-.list{
+.list {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -22,19 +20,13 @@
     overflow: auto;
 }
 
-.item_loader{
+.item_loader {}
 
-}
+.item_empty {}
 
-.item_empty{
+.item {}
 
-}
-
-.item{
-    
-}
-
-.help{
+.help {
     position: relative;
     padding: 4px;
     color: #555;

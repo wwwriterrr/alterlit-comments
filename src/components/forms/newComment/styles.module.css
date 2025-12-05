@@ -1,4 +1,4 @@
-:global(.autocomplete-av) {
+:global(#comments-root .autocomplete-av) {
     width: 20px !important;
     height: 20px !important;
     border-radius: 50%;
