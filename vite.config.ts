@@ -1,4 +1,4 @@
-import path from 'path';
+// import path from 'path';
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -11,16 +11,16 @@ export default defineConfig({
       },
     }),
   ],
-  resolve: {
-    alias: [
-      // перенаправляем любые импорты index.css на пустой файл в проекте
-      { find: /(^|\/)index\.css$/, replacement: path.resolve(__dirname, 'src/empty.css') }
-    ]
-  },
-  build: {
-    rollupOptions: {
-      // пометить как external (полезно для JS-модулей)
-      external: [/index\.css$/]
-    }
-  }
+  // resolve: {
+  //   alias: [
+  //     // перенаправляем любые импорты index.css на пустой файл в проекте
+  //     { find: /(^|\/)index\.css$/, replacement: path.resolve(__dirname, 'src/empty.css') }
+  //   ]
+  // },
+  // build: {
+  //   rollupOptions: {
+  //     // пометить как external (полезно для JS-модулей)
+  //     external: [/index\.css$/]
+  //   }
+  // }
 })
