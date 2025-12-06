@@ -73,7 +73,7 @@ export const CommentsList: FC = () => {
                                 } else {
                                     console.error('Comment does not exist');
                                 }
-                            }, 100)
+                            }, 300)
                         }
                     })
 

@@ -93,6 +93,11 @@
     margin: 0 0 10px 0;
 }
 
+.comment__content a{
+    color: var(--link-color);
+    text-decoration: underline;
+}
+
 .comment__content p:last-child {
     margin: 0;
 }
