@@ -115,7 +115,7 @@ export const CommentsList: FC = () => {
     if (!postId) return null;
 
     return (
-        <div id="comments" className={styles.wrap} ref={listRef}>
+        <div id="comments-list" className={styles.wrap} ref={listRef}>
             {pending ? (
                 <div className={styles.loader}>Loading ...</div>
             ) : (
