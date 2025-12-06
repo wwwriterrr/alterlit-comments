@@ -40,7 +40,7 @@ type TTinyAutocompleteItem = {
                 type: 'cardimage',
                 src: string,
                 alt: string,
-                classes: ['autocomplete-av']
+                classes: string[],
             },
             {
                 type: 'cardtext',
@@ -293,7 +293,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                                                                 type: 'cardimage' as const,
                                                                 src: `${HostURL}${item.avatar}`,
                                                                 alt: item.name,
-                                                                classes: ['autocomplete-av']
+                                                                classes: ['tiny-autocomplete-item']
                                                             },
                                                             {
                                                                 type: 'cardtext' as const,

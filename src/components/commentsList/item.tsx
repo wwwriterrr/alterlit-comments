@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from '../../services/store';
 import { getCommentsPerms, getUser } from '../../services/auth/slice';
 import styles from './styles.module.css';
 import { HostURL } from '../../core/constants';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { LikeIcon } from '../icons/like';
 import { CloseIcon } from '../icons/close';
 import { ReplyIcon } from '../icons/reply';
@@ -18,7 +18,20 @@ import { SupportModal } from '../modals/support';
 const DELTA = 5 * 60 * 1000;
 
 export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
-    const [showReply, setShowReply] = useState<boolean>(false);
+    const location = useLocation();
+    const search = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const anchorCommentId = useMemo(() => {
+        if(search.get('anchor') === 'comments' && search.has('comment_id')) return parseInt(search.get('comment_id') as string);
+        return null;
+    }, [search])
+    const anchorInReply = useMemo(() => {
+        if(anchorCommentId){
+            if(comment.reply?.find(item => item.id === anchorCommentId)) return true;
+        }
+        return false;
+    }, [comment.reply, anchorCommentId])
+
+    const [showReply, setShowReply] = useState<boolean>(anchorInReply);
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [showEditForm, setShowEditForm] = useState<boolean>(false);
     const [removePending, setRemovePending] = useState<boolean>(false);
@@ -153,7 +166,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         <>
             <div
                 id={`comment-${comment.id}`}
-                className={`${styles.comment} ${comment.on_comment ? styles.comment_reply : ''}`}
+                className={`${styles.comment} ${comment.on_comment ? styles.comment_reply : ''} ${anchorCommentId === comment.id ? styles.comment_highlight : ''}`}
                 style={{
                     opacity: removePending ? .3 : undefined,
                 }}

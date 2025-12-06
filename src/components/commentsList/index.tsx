@@ -1,8 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import styles from './styles.module.css';
 import { useCallback, useEffect, useState, type FC } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
-import { CommentsFetch, commentsWsConnect, commentsWsDisconnect } from '../../services/comments/actions';
+import { CommentsFetch, commentsWsConnect, commentsWsDisconnect, type TCommentsFetchProps } from '../../services/comments/actions';
 import { WsURL } from '../../core/constants';
 import { getComments } from '../../services/comments/slice';
 import { Comment } from './item';
@@ -13,6 +13,8 @@ export const CommentsList: FC = () => {
     const [pendingMore, setPendingMore] = useState<boolean>(false);
 
     const { postId } = useParams();
+
+    const location = useLocation();
 
     const dispatch = useAppDispatch();
 
@@ -37,20 +39,43 @@ export const CommentsList: FC = () => {
         let isMounted = true;
         const controller = new AbortController();
         const signal = controller.signal;
+        const search = new URLSearchParams(location.search);
+        const isCommentAnchor = search.has('anchor') && search.get('anchor') == 'comments' && search.has('comment_id');
 
         const fetchComments = async () => {
             if (!isMounted) return;
 
             setPending(true);
 
+            const fetchParams: TCommentsFetchProps = {
+                instanceId: postId as string,
+                type: 'post',
+                signal,
+            }
+
+            if(isCommentAnchor){
+                fetchParams.limit = 'all';
+            }
+
             try {
-                await dispatch(
-                    CommentsFetch({
-                        instanceId: postId as string,
-                        type: 'post',
-                        signal,
+                await dispatch(CommentsFetch(fetchParams))
+                    .unwrap()
+                    .then(() => {
+                        if(isCommentAnchor){
+                            setTimeout(() => {
+                                const commentId = search.get('comment_id');
+                                const elem = document.getElementById(`comment-${commentId}`);
+
+                                if(elem){
+                                    const rect = elem.getBoundingClientRect();
+                                    const top = rect.top;
+                                    window.scrollTo(0, top);
+                                } else {
+                                    console.error('Comment does not exist');
+                                }
+                            }, 100)
+                        }
                     })
-                ).unwrap();
 
                 if (isMounted && postId) {
                     dispatch(commentsWsConnect(`${WsURL}comments/post/${postId}/`));
@@ -74,7 +99,7 @@ export const CommentsList: FC = () => {
             if (!signal.aborted) controller.abort();
             dispatch(commentsWsDisconnect());
         };
-    }, [postId, dispatch]);
+    }, [postId, dispatch, location.search]);
 
     if (!postId) return null;
 

@@ -8,11 +8,24 @@ export const commentsWsConnect = createAction<string, 'FEED_CONNECT'>('FEED_CONN
 
 export const commentsWsDisconnect = createAction('FEED_DISCONNECT');
 
+export type TCommentsFetchProps = {
+    instanceId: string, 
+    dispatchMethod?: 'set' | 'add', 
+    type: string, 
+    signal?: AbortSignal, 
+    limit?: number | 'all', 
+    filters?: {[key: string]: string | number | boolean},
+}
+
 export const CommentsFetch = createAsyncThunk(
     'comments/fetch',
-    async ({ dispatchMethod='set', type = 'post', instanceId, signal, filters }: { instanceId: string, dispatchMethod?: 'set' | 'add', type: string, signal?: AbortSignal, filters?: {[key: string]: string | number | boolean} }, { rejectWithValue, dispatch }) => {
+    async ({ dispatchMethod='set', type = 'post', instanceId, signal, limit, filters }: TCommentsFetchProps, { rejectWithValue, dispatch }) => {
         try {
             const url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
+
+            if(limit){
+                url.searchParams.set('limit', `${limit}`);
+            }
 
             if (filters){
                 url.searchParams.set('filters', JSON.stringify(filters));

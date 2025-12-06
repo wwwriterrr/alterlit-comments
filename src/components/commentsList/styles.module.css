@@ -26,6 +26,12 @@
     padding-left: 80px;
 }
 
+.comment_highlight{
+    background-color: #ffecca;
+    border-radius: 10px;
+    outline: 5px solid #ffecca;
+}
+
 .comment__avatar {
     position: relative;
     width: 60px;
