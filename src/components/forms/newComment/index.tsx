@@ -16,8 +16,8 @@ import { AttachModal } from '../../modals/attach';
 import { animateCloseModal } from '../../../services/modal/actions';
 import { CloseIcon } from '../../icons/close';
 import type { Editor as TinyMCEEditor } from 'tinymce';
-// import {isMobile} from 'react-device-detect';
-import { useTouchScreen } from '../../../core/hooks';
+import {isMobile} from 'react-device-detect';
+// import { useTouchScreen } from '../../../core/hooks';
 
 type TProps = {
     replyTo?: number;
@@ -62,7 +62,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
 
     const { postId } = useParams();
 
-    const isTouchScreen = useTouchScreen();
+    // const isTouchScreen = useTouchScreen();
 
     const dispatch = useAppDispatch();
 
@@ -220,7 +220,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                         ],
                         // quickbars_insert_toolbar: 'emoticons',
                         quickbars_insert_toolbar: false,
-                        quickbars_selection_toolbar: isTouchScreen ? false : 'bold italic underline strikethrough | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull | removeformat',
+                        quickbars_selection_toolbar: isMobile ? false : 'bold italic underline strikethrough | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull | removeformat',
                         valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style],s[style]',
                         valid_styles: {
                             '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding,background-color,',

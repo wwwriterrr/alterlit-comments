@@ -1,6 +1,6 @@
 import { useLocation, useParams } from 'react-router-dom';
 import styles from './styles.module.css';
-import { useCallback, useEffect, useState, type FC } from 'react';
+import { useCallback, useEffect, useRef, useState, type FC } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { CommentsFetch, commentsWsConnect, commentsWsDisconnect, type TCommentsFetchProps } from '../../services/comments/actions';
 import { WsURL } from '../../core/constants';
@@ -11,6 +11,8 @@ import { LoaderSpinnerIcon } from '../icons/loader';
 export const CommentsList: FC = () => {
     const [pending, setPending] = useState<boolean>(false);
     const [pendingMore, setPendingMore] = useState<boolean>(false);
+
+    const listRef = useRef<HTMLDivElement>(null);
 
     const { postId } = useParams();
 
@@ -41,6 +43,7 @@ export const CommentsList: FC = () => {
         const signal = controller.signal;
         const search = new URLSearchParams(location.search);
         const isCommentAnchor = search.has('anchor') && search.get('anchor') == 'comments' && search.has('comment_id');
+        const isCommentsListAnchor = search.get('anchor') == 'comments' && !search.has('comment_id');
 
         const fetchComments = async () => {
             if (!isMounted) return;
@@ -74,6 +77,14 @@ export const CommentsList: FC = () => {
                                     console.error('Comment does not exist');
                                 }
                             }, 300)
+                        }else if (isCommentsListAnchor) {
+                            setTimeout(() => {
+                                if(listRef.current){
+                                    const rect = listRef.current.getBoundingClientRect();
+                                    const top = rect.top;
+                                    window.scrollTo(0, top);
+                                }
+                            }, 300)
                         }
                     })
 
@@ -104,7 +115,7 @@ export const CommentsList: FC = () => {
     if (!postId) return null;
 
     return (
-        <div className={styles.wrap}>
+        <div id="comments" className={styles.wrap} ref={listRef}>
             {pending ? (
                 <div className={styles.loader}>Loading ...</div>
             ) : (
