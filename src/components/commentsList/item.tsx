@@ -192,10 +192,11 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                             {comment.images.map((image) => (
                                 <img
                                     key={`comment-image-${image.id}`}
-                                    className={`${styles.comment__attach__item} to-view`}
+                                    className={`comment to-view ${styles.comment__attach__item}`}
                                     src={`${HostURL}${image.url}`}
                                     alt={`Comment image ${image.id}`}
                                     data-fullsrc={`${HostURL}${image.url}`}
+                                    data-id={comment.id}
                                 />
                             ))}
                         </div>
