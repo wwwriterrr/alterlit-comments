@@ -20,6 +20,8 @@ import {
     type TCommentsWsExternalActions 
 } from './comments/actions';
 import { ModalSlice, type TModalInternalActions } from './modal/slice';
+import type { TViewerInternalActions } from './viewer/slice';
+import ViewerSlice from './viewer/slice';
 
 const commentsMiddleware = socketMiddleware<unknown, IWsMessage>({
     connect: commentsWsConnect,
@@ -35,6 +37,7 @@ const rootReducer = combineReducers([
     AuthSlice,
     CommentsSlice,
     ModalSlice,
+    ViewerSlice,
 ].reduce((acc, reducer) => {
     acc[reducer.name] = reducer.reducer;
     return acc;
@@ -51,6 +54,7 @@ type TAppActions = TAuthInternalActions
     | TCommentsInternalActions
     | TCommentsWsExternalActions
     | TModalInternalActions
+    | TViewerInternalActions
 
 export type AppStore = typeof store;
 export type RootState = ReturnType<typeof rootReducer>;

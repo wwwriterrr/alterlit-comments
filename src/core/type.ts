@@ -1,17 +1,16 @@
-
 declare global {
     type TCommentsPerms = {
-        comments_list: boolean,
-        comments_send: boolean,
-        comments_list_detail: string,
-        comments_send_detail: string,
-    }
+        comments_list: boolean;
+        comments_send: boolean;
+        comments_list_detail: string;
+        comments_send_detail: string;
+    };
 
     interface IAuthUser {
-        id: number,
-        access: string,
-        refresh: string,
-        perms: string[],
+        id: number;
+        access: string;
+        refresh: string;
+        perms: string[];
     }
 
     type TIconProps = {
@@ -33,7 +32,7 @@ declare global {
         groups: string[];
     }
 
-    type TAutocompleteUser = Omit<IUser, 'is_staff' | 'groups'>
+    type TAutocompleteUser = Omit<IUser, 'is_staff' | 'groups'>;
 
     interface ICommentImage {
         id: number;
@@ -44,7 +43,7 @@ declare global {
     interface IComment {
         id: number;
         dt: string | number;
-        dt_modified: string | number | null,
+        dt_modified: string | number | null;
         author: IUser;
         content: string;
         images?: ICommentImage[];
@@ -62,59 +61,66 @@ declare global {
     }
 
     interface IWsMessageBase {
-        type: 'chat.message',
+        type: 'chat.message';
         message: {
-            type: WsMessageTypes,
-        }
+            type: WsMessageTypes;
+        };
     }
 
     interface IWsNewCommentMessage extends IWsMessageBase {
         message: {
-            type: WsMessageTypes.new_comment,
-            comment: IComment,
-        }
+            type: WsMessageTypes.new_comment;
+            comment: IComment;
+        };
     }
 
     interface IWsChangeCommentMessage extends IWsMessageBase {
         message: {
-            type: WsMessageTypes.change_comment,
-            comment: IComment,
-        }
+            type: WsMessageTypes.change_comment;
+            comment: IComment;
+        };
     }
 
     interface IWsRemoveCommentMessage extends IWsMessageBase {
         message: {
-            type: WsMessageTypes.remove_comment,
-            comment_id: number,
-            on_comment?: number,
-        }
+            type: WsMessageTypes.remove_comment;
+            comment_id: number;
+            on_comment?: number;
+        };
     }
 
     interface IWsLikeCommentMessage extends IWsMessageBase {
         message: {
-            type: WsMessageTypes.like_comment,
-            comment_id: number,
-            user_id: number,
-        }
+            type: WsMessageTypes.like_comment;
+            comment_id: number;
+            user_id: number;
+        };
     }
 
     interface IWsDislikeCommentMessage extends IWsMessageBase {
         message: {
-            type: WsMessageTypes.dislike_comment,
-            comment_id: number,
-            user_id: number,
-        }
+            type: WsMessageTypes.dislike_comment;
+            comment_id: number;
+            user_id: number;
+        };
     }
 
-    type IWsMessage = IWsNewCommentMessage
+    type IWsMessage =
+        | IWsNewCommentMessage
         | IWsChangeCommentMessage
         | IWsRemoveCommentMessage
         | IWsLikeCommentMessage
-        | IWsDislikeCommentMessage
+        | IWsDislikeCommentMessage;
 
     interface IAppImage {
-        id: number,
-        url: string,
-        preview: string,
+        id: number;
+        url: string;
+        preview: string;
+    }
+
+    interface IViewerImage {
+        id: number;
+        url: string;
+        preview?: string;
     }
 }

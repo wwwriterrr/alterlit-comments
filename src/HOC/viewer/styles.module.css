@@ -1,0 +1,85 @@
+.wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.viewer {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    cursor: default;
+}
+
+.closeButton {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.closeButton:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.closeButton:focus {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .viewer {
+        max-width: 95vw;
+        max-height: 95vh;
+        border-radius: 8px;
+    }
+    
+    .closeButton {
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .imageContainer {
+        min-height: 200px;
+    }
+}

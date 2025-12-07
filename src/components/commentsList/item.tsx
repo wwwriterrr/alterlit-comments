@@ -14,6 +14,8 @@ import { CommentForm } from '../forms/newComment';
 import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
 import { openModal } from '../../services/modal/slice';
 import { SupportModal } from '../modals/support';
+import { useViewer } from '../../core/hooks';
+import { motion } from 'motion/react';
 
 const DELTA = 5 * 60 * 1000;
 
@@ -37,6 +39,13 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     const [removePending, setRemovePending] = useState<boolean>(false);
 
     const [currentTime, setCurrentTime] = useState(new Date());
+
+    const { showImage } = useViewer();
+
+    const handleImageClick = (image: IViewerImage) => {
+        const layoutId = `comment-image-${comment.id}-${image.id}`;
+        showImage(image, layoutId);
+    };
 
     const dispatch = useAppDispatch();
 
@@ -190,13 +199,14 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     {comment.images?.length ? (
                         <div className={styles.comment__attach} style={{ opacity: editedOpacity }}>
                             {comment.images.map((image) => (
-                                <img
+                                <motion.img
                                     key={`comment-image-${image.id}`}
-                                    className={`comment to-view ${styles.comment__attach__item}`}
+                                    className={`${styles.comment__attach__item}`}
                                     src={`${HostURL}${image.url}`}
                                     alt={`Comment image ${image.id}`}
                                     data-fullsrc={`${HostURL}${image.url}`}
-                                    data-id={comment.id}
+                                    onClick={() => handleImageClick({...image, url: `${HostURL}${image.url}`})}
+                                    layoutId={`comment-image-${comment.id}-${image.id}`}
                                 />
                             ))}
                         </div>

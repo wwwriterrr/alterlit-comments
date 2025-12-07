@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useAppDispatch } from '../services/store';
+import { closeViewer, openViewer } from '../services/viewer/slice';
 
 export const useTouchScreen = (): boolean => {
     const [isTouchScreen, setIsTouchScreen] = useState<boolean>(() => {
@@ -41,4 +43,21 @@ export const useTouchScreen = (): boolean => {
     }, []);
 
     return isTouchScreen;
+};
+
+export const useViewer = () => {
+    const dispatch = useAppDispatch();
+
+    const showImage = useCallback((image: IViewerImage, layoutId?: string) => {
+        dispatch(openViewer({ image, layoutId }));
+    }, [dispatch]);
+
+    const hideViewer = useCallback(() => {
+        dispatch(closeViewer());
+    }, [dispatch]);
+
+    return {
+        showImage,
+        hideViewer,
+    };
 };
