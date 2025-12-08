@@ -14,7 +14,7 @@ const ViewerSlice = createSlice({
     name: 'viewer',
     initialState,
     reducers: {
-        setViewerCurrentImage: (state, action: PayloadAction<IViewerImage>) => {
+        setViewerCurrentImage: (state, action: PayloadAction<IViewerImage | null>) => {
             state.currentImage = action.payload;
         },
         setViewerOpen: (state, action: PayloadAction<boolean>) => {
@@ -24,10 +24,10 @@ const ViewerSlice = createSlice({
             state.isOpen = true;
             state.currentImage = action.payload.image;
         },
-        closeViewer: (state) => {
-            state.isOpen = false;
-            state.currentImage = null;
-        },
+        // closeViewer: (state) => {
+        //     state.isOpen = false;
+        //     // state.currentImage = null;
+        // },
     },
     selectors: {
         getViewerCurrentImage: state => state.currentImage,
@@ -40,7 +40,7 @@ export const {
     setViewerCurrentImage,
     setViewerOpen,
     openViewer,
-    closeViewer,
+    // closeViewer,
 } = ViewerSlice.actions;
 
 export const {
