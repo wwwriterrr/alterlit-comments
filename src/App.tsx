@@ -21,8 +21,8 @@ function App() {
                             <Route path="*" element={<>404</>} />
                         </Routes>
                     </BrowserRouter>
-                    <ViewerProvider />
                     <ModalHOC />
+                    <ViewerProvider />
                 </>
             </AuthHOC>
         </Provider>

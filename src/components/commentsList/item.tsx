@@ -14,8 +14,7 @@ import { CommentForm } from '../forms/newComment';
 import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
 import { openModal } from '../../services/modal/slice';
 import { SupportModal } from '../modals/support';
-import { useViewer } from '../../core/hooks';
-import { motion } from 'motion/react';
+import { openViewer } from '../../services/viewer/slice';
 
 const DELTA = 5 * 60 * 1000;
 
@@ -23,12 +22,12 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     const location = useLocation();
     const search = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const anchorCommentId = useMemo(() => {
-        if(search.get('anchor') === 'comments' && search.has('comment_id')) return parseInt(search.get('comment_id') as string);
+        if (search.get('anchor') === 'comments' && search.has('comment_id')) return parseInt(search.get('comment_id') as string);
         return null;
     }, [search])
     const anchorInReply = useMemo(() => {
-        if(anchorCommentId){
-            if(comment.reply?.find(item => item.id === anchorCommentId)) return true;
+        if (anchorCommentId) {
+            if (comment.reply?.find(item => item.id === anchorCommentId)) return true;
         }
         return false;
     }, [comment.reply, anchorCommentId])
@@ -40,12 +39,12 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    const { showImage } = useViewer();
+    // const { showImage } = useViewer();
 
-    const handleImageClick = (image: IViewerImage) => {
-        const layoutId = `comment-image-${comment.id}-${image.id}`;
-        showImage(image, layoutId);
-    };
+    // const handleImageClick = (image: IViewerImage) => {
+    //     const layoutId = `comment-image-${comment.id}-${image.id}`;
+    //     showImage(image, layoutId);
+    // };
 
     const dispatch = useAppDispatch();
 
@@ -57,9 +56,9 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
     const isShowReply = useMemo(() => (user && perms.comments_send ? true : false), [user, perms]);
 
     const isShowTimer = useMemo(() => {
-        if(isAdmin) return false;
+        if (isAdmin) return false;
 
-        if(comment.author.id !== user?.id) return false;
+        if (comment.author.id !== user?.id) return false;
 
         const diff = currentTime.getTime() - new Date(`${comment.dt}+03:00`).getTime();
         return diff <= (DELTA - 1500);
@@ -112,7 +111,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
     const dtModified = useMemo(
         () => {
-            if(!comment.dt_modified) return null;
+            if (!comment.dt_modified) return null;
 
             return new Date(`${comment.dt_modified}+03:00`).toLocaleDateString('ru-RU', {
                 day: '2-digit',
@@ -140,19 +139,19 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         const msg = `Вы точно хотите удалить комментарий${comment.reply?.length ? ' и всю ветку ответов' : ''}?`;
         const res = confirm(msg)
 
-        if(res){
+        if (res) {
             setRemovePending(true);
-            dispatch(CommentsRemove({commentId: comment.id}))
+            dispatch(CommentsRemove({ commentId: comment.id }))
                 .finally(() => setRemovePending(false));
         }
     }, [comment.id, comment.reply, dispatch])
 
     const handleLike = useCallback(() => {
-        dispatch(CommentsLike({contentType: 'comment', objectId: comment.id}));
+        dispatch(CommentsLike({ contentType: 'comment', objectId: comment.id }));
     }, [comment.id, dispatch])
 
     const handleCompliant = useCallback(() => {
-        dispatch(openModal({content: (<SupportModal commentId={comment.id} />)}));
+        dispatch(openModal({ content: (<SupportModal commentId={comment.id} />) }));
     }, [dispatch, comment.id])
 
     useEffect(() => {
@@ -197,16 +196,18 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         <div className={styles.comment__dt}>{dt}</div>
                     </div>
                     {comment.images?.length ? (
-                        <div className={styles.comment__attach} style={{ opacity: editedOpacity }}>
+                        <div
+                            className={styles.comment__attach}
+                            style={{ opacity: editedOpacity }}
+                        >
                             {comment.images.map((image) => (
-                                <motion.img
-                                    key={`comment-image-${image.id}`}
-                                    className={`${styles.comment__attach__item}`}
+                                <img
+                                    key={`comment-image-thumb-${comment.id}-${image.id}`}
+                                    className={styles.comment__attach__item}
                                     src={`${HostURL}${image.url}`}
                                     alt={`Comment image ${image.id}`}
                                     data-fullsrc={`${HostURL}${image.url}`}
-                                    onClick={() => handleImageClick({...image, url: `${HostURL}${image.url}`})}
-                                    layoutId={`comment-image-${comment.id}-${image.id}`}
+                                    onClick={() => dispatch(openViewer({image}))}
                                 />
                             ))}
                         </div>
@@ -287,14 +288,14 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     ) : null}
                 </div>
             </div>
-            {showReplyForm && isShowReply ? <CommentForm replyTo={comment.on_comment ? comment.on_comment : comment.id} onSuccess={() => {setShowReplyForm(false);setShowReply(true)}} /> : null}
+            {showReplyForm && isShowReply ? <CommentForm replyTo={comment.on_comment ? comment.on_comment : comment.id} onSuccess={() => { setShowReplyForm(false); setShowReply(true) }} /> : null}
             {showEditForm && isShowEditBtns ? (
                 <CommentForm
                     editId={comment.id}
                     style={{
                         paddingLeft: comment.on_comment ? 60 : undefined,
                     }}
-                    onSuccess={() => {setShowEditForm(false)}}
+                    onSuccess={() => { setShowEditForm(false) }}
                 />
             ) : null}
             {comment.reply && comment.reply.length && showReply ? (

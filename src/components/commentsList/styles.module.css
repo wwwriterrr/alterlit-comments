@@ -148,10 +148,9 @@
 }
 
 .comment__attach__item {
+    position: relative;
     height: 140px;
-    width: auto;
     background-color: #e3e3e3;
-    border-radius: 6px;
     cursor: pointer;
 }
 

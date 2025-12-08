@@ -1,15 +1,16 @@
 import { AnimatePresence, motion } from 'motion/react';
 import type { FC, ReactElement } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
-import { getViewerOpen, getViewerCurrentImage, getViewerLayoutId, closeViewer } from '../../services/viewer/slice';
+import { getViewerOpen, getViewerCurrentImage, closeViewer } from '../../services/viewer/slice';
 import styles from './styles.module.css';
 import { CloseIcon } from '../../components/icons/close';
 import { useEffect } from 'react';
+import { HostURL } from '../../core/constants';
 
 const Viewer = () => {
     const dispatch = useAppDispatch();
-    const currentImage = useAppSelector(getViewerCurrentImage);
-    const layoutId = useAppSelector(getViewerLayoutId);
+    const currentImage = useAppSelector(getViewerCurrentImage)!;
+    const isViewerOpen = useAppSelector(getViewerOpen);
 
     const handleClose = () => {
         dispatch(closeViewer());
@@ -28,14 +29,21 @@ const Viewer = () => {
             }
         };
 
-        document.addEventListener('keydown', handleEscape);
-        document.body.style.overflow = 'hidden';
+        if (isViewerOpen) {
+            document.addEventListener('keydown', handleEscape);
+            return () => document.removeEventListener('keydown', handleEscape);
+        }
+    }, [isViewerOpen]);
 
-        return () => {
-            document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'unset';
-        };
-    }, []);
+    useEffect(() => {
+        if (isViewerOpen) {
+            const prev = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = prev;
+            };
+        }
+    }, [isViewerOpen]);
 
     if (!currentImage) return null;
 
@@ -43,17 +51,21 @@ const Viewer = () => {
         <motion.div 
             className={styles.wrap}
             onClick={handleOverlayClick}
-            // initial={{ opacity: 0 }}
-            // animate={{ opacity: 1 }}
-            // exit={{ opacity: 0 }}
-            // transition={{ duration: 0.3 }}
+            key="viewer"
         >
             <motion.div 
+                key="viewer-overlay"
                 className={styles.overlay}
-                // initial={{ opacity: 0 }}
-                // animate={{ opacity: 1 }}
-                // exit={{ opacity: 0 }}
-                // transition={{ duration: 0.2 }}
+                onClick={handleClose}
+                initial={{
+                    height: 0,
+                }}
+                animate={{
+                    height: '100%',
+                }}
+                exit={{
+                    height: 0,
+                }}
             />
             <button 
                 className={styles.closeButton}
@@ -64,30 +76,29 @@ const Viewer = () => {
             </button>
             <motion.div 
                 className={styles.viewer}
-                // initial={{ scale: 0.8, opacity: 0 }}
-                // animate={{ scale: 1, opacity: 1 }}
-                // exit={{ scale: 0.8, opacity: 0 }}
-                // transition={{ 
-                //     duration: 0.3,
-                //     ease: [0.25, 0.46, 0.45, 0.94]
-                // }}
             >
                 <motion.img
-                    src={`${currentImage.url}`}
+                    key="viewer-image"
+                    src={`${HostURL}${currentImage.url}`}
                     alt={`Image ${currentImage.id}`}
                     className={styles.image}
-                    layoutId={layoutId}
-                    // initial={{ scale: 0.9 }}
-                    // animate={{ scale: 1 }}
-                    // transition={{ 
-                    //     duration: 0.4,
-                    //     ease: [0.25, 0.46, 0.45, 0.94]
-                    // }}
                     onError={(e) => {
                         // Fallback to preview if main image fails
                         if (currentImage.preview && e.currentTarget.src !== currentImage.preview) {
                             e.currentTarget.src = currentImage.preview;
                         }
+                    }}
+                    initial={{
+                        opacity: 0,
+                        y: 100,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    exit={{
+                        opacity: 0,
+                        y: -100
                     }}
                 />
             </motion.div>
@@ -101,8 +112,8 @@ export const ViewerProvider: FC<{children?: ReactElement}> = ({children}) => {
     return (
         <>
             {children}
-            <AnimatePresence mode="wait">
-                {isViewerOpen ? <Viewer /> : null}
+            <AnimatePresence>
+                {isViewerOpen ? <Viewer key="viewer-wrap"/> : null}
             </AnimatePresence>
         </>
     );
