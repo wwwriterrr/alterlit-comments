@@ -88,7 +88,7 @@ const Viewer = () => {
                 }}
                 initial={{
                     opacity: 0,
-                    y: 100,
+                    y: 18,
                 }}
                 animate={{
                     opacity: 1,
@@ -101,7 +101,7 @@ const Viewer = () => {
                 }}
                 exit={{
                     opacity: 0,
-                    y: -100,
+                    y: -18,
                     transition: {
                         duration: 0.2,
                         ease: 'linear',

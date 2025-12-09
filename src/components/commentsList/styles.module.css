@@ -1,3 +1,14 @@
+@keyframes comment-fade-out {
+    0%{
+        background-color: #ffecca;
+        outline-color: #ffecca;
+    }
+    100%{
+        background-color: transparent;
+        outline-color: transparent;
+    }
+}
+
 .wrap {}
 
 .list {
@@ -30,6 +41,10 @@
     background-color: #ffecca;
     border-radius: 10px;
     outline: 5px solid #ffecca;
+
+    animation: comment-fade-out 1s ease-out;
+    animation-delay: 3s;
+    animation-fill-mode: both;
 }
 
 .comment__avatar {

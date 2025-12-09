@@ -71,7 +71,7 @@ const Modal = () => {
                 className={`app-modal__window ${styles.window}`}
                 initial={{
                     opacity: 0,
-                    y: 50,
+                    y: 18,
                 }}
                 animate={{
                     opacity: 1,
@@ -84,7 +84,7 @@ const Modal = () => {
                 }}
                 exit={{
                     opacity: 0,
-                    y: 50,
+                    y: 18,
                     transition: {
                         duration: .1,
                         ease: 'linear',
