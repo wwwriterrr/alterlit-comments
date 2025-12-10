@@ -207,7 +207,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                                     src={`${HostURL}${image.url}`}
                                     alt={`Comment image ${image.id}`}
                                     data-fullsrc={`${HostURL}${image.url}`}
-                                    onClick={() => dispatch(openViewer({image}))}
+                                    onClick={() => dispatch(openViewer({ image }))}
                                 />
                             ))}
                         </div>
@@ -288,7 +288,26 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     ) : null}
                 </div>
             </div>
-            {showReplyForm && isShowReply ? <CommentForm replyTo={comment.on_comment ? comment.on_comment : comment.id} onSuccess={() => { setShowReplyForm(false); setShowReply(true) }} /> : null}
+            {showReplyForm && isShowReply ? (
+                <CommentForm
+                    replyTo={comment.on_comment ? comment.on_comment : comment.id}
+                    onSuccess={() => { setShowReplyForm(false); setShowReply(true) }}
+                    initialValue={`
+                        <p>
+                        <a href="${HostURL}/profile/${comment.author.username}/">${comment.author.name}</a>
+                        <br data-mce-bogus="1">
+                        </p>
+                    `}
+                    onInit={(editor) => {
+                        setTimeout(() => {
+                            editor.selection.select(editor.getBody(), true);
+                            editor.selection.collapse(false);
+                            editor.focus();
+                            // editor.focus()
+                        }, 200)
+                    }}
+                />
+            ) : null}
             {showEditForm && isShowEditBtns ? (
                 <CommentForm
                     editId={comment.id}
@@ -296,12 +315,16 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         paddingLeft: comment.on_comment ? 60 : undefined,
                     }}
                     onSuccess={() => { setShowEditForm(false) }}
+                    initialValue={comment.content}
+                    initialAttach={comment.images}
                 />
             ) : null}
             {comment.reply && comment.reply.length && showReply ? (
                 <>
                     {comment.reply?.map((item) => (
-                        <Comment comment={item} key={`comment_${comment.id}-${item.id}`} />
+                        <Comment
+                            comment={item} key={`comment_${comment.id}-${item.id}`}
+                        />
                     ))}
                 </>
             ) : null}

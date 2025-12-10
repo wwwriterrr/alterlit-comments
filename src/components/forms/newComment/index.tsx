@@ -1,13 +1,10 @@
 import { useCallback, useRef, useState, type CSSProperties, type FC } from 'react';
 import styles from './styles.module.css';
 import { Editor } from '@tinymce/tinymce-react';
-// import { getLastWord } from './utils';
 import { SendIcon } from '../../icons/send';
 import { AddImageIcon } from '../../icons/addImage';
-import { useAppDispatch, useAppSelector } from '../../../services/store';
-import { getComment, type IInitialState } from '../../../services/comments/slice';
+import { useAppDispatch } from '../../../services/store';
 import { HostURL } from '../../../core/constants';
-// import { CommentFormMention } from './mention';
 import { CommentsSend, CommentsUserAutocomplete } from '../../../services/comments/actions';
 import { useParams } from 'react-router-dom';
 import { LoaderSpinnerIcon } from '../../icons/loader';
@@ -16,15 +13,17 @@ import { AttachModal } from '../../modals/attach';
 import { animateCloseModal } from '../../../services/modal/actions';
 import { CloseIcon } from '../../icons/close';
 import type { Editor as TinyMCEEditor } from 'tinymce';
-import {isMobile} from 'react-device-detect';
-// import { useTouchScreen } from '../../../core/hooks';
+import { isMobile } from 'react-device-detect';
 
 type TProps = {
+    initialValue?: string,
+    initialAttach?: ICommentImage[],
     replyTo?: number;
     editId?: number;
     className?: string;
     style?: CSSProperties;
     onSuccess?: () => void;
+    onInit?: (editor: TinyMCEEditor) => void;
 }
 
 type TTinyAutocompleteItem = {
@@ -51,18 +50,21 @@ type TTinyAutocompleteItem = {
     }[],
 }
 
-export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onSuccess }) => {
-    const comment = useAppSelector((state: { comments: IInitialState }) => getComment(state, editId || 0));
-
-    const [value, setValue] = useState<string>(comment ? comment.content : '');
-    const [attach, setAttach] = useState<ICommentImage[]>(comment ? comment.images || [] : []);
-    // const [showMention, setShowMention] = useState<boolean>(false);
-    // const [mentionQuery, setMentionQuery] = useState<string>('');
+export const CommentForm: FC<TProps> = ({
+    initialValue = '',
+    initialAttach = [],
+    replyTo,
+    editId,
+    className,
+    style,
+    onSuccess,
+    onInit,
+}) => {
+    const [value, setValue] = useState<string>(initialValue);
+    const [attach, setAttach] = useState<ICommentImage[]>(initialAttach);
     const [pending, setPending] = useState<boolean>(false);
 
     const { postId } = useParams();
-
-    // const isTouchScreen = useTouchScreen();
 
     const dispatch = useAppDispatch();
 
@@ -70,21 +72,11 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
 
     const changeHandler = (newContent: string) => {
         setValue(newContent);
-
-        // const lastWord = getLastWord();
-        // if (/\B@\w*/.test(lastWord)) {
-        //     // Show mention
-        //     setShowMention(true);
-        //     setMentionQuery(lastWord);
-        // } else {
-        //     // Close mention
-        //     setShowMention(false);
-        //     setMentionQuery('');
-        // }
     }
 
     const initHindler = (_: unknown, editor: TinyMCEEditor) => {
         editorRef.current = editor;
+        onInit?.(editor);
     }
 
     const submitHandler = () => {
@@ -122,29 +114,6 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
             .finally(() => setPending(false));
     }
 
-    // const handleMentionSelect = useCallback((user: TAutocompleteUser) => {
-    //     if (!editorRef.current) return;
-
-    //     const content = editorRef.current.getContent() as string;
-    //     const href = `${HostURL}/profile/${user.username}/`;
-    //     const newContent = content.replace(mentionQuery, `<a href="${href}">${user.name}</a><span>&nbsp;</span>`);
-
-    //     setValue(newContent);
-
-    //     setTimeout(() => {
-    //         try {
-    //             const node = editorRef.current?.dom.select(`a[href="${href}"] + span`);
-    //             if (node) {
-    //                 editorRef.current?.selection.setCursorLocation(node[0].firstChild as Node, 1);
-    //                 editorRef.current?.focus();
-    //             }
-    //         } catch (err) {
-    //             console.log('Error with set cursor', err);
-    //         }
-    //     }, 100);
-
-    // }, [mentionQuery])
-
     const handleAttachSubmit = useCallback((images: IAppImage[]) => {
         setAttach([...attach, ...images]);
         dispatch(animateCloseModal(200));
@@ -176,9 +145,6 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                 ...style,
             }}
         >
-            {/* {showMention ? (
-                <CommentFormMention query={mentionQuery.replace('@', '').replace(/\s+$/g, '')} onItemSelect={handleMentionSelect} />
-            ) : null} */}
             {attach.length ? (
                 <div className={styles.attach}>
                     {attach.map((item, i) => (
@@ -253,7 +219,7 @@ export const CommentForm: FC<TProps> = ({ replyTo, editId, className, style, onS
                                 margin: 0;
                             }
                         `,
-                        // auto_focus: true,
+                        // auto_focus: replyTo ? true : undefined,
                         setup: (editor: TinyMCEEditor) => {
                             const onAction = (autocompleteApi: { hide: () => void }, rng: Range, value: string) => {
                                 editor.selection.setRng(rng);
