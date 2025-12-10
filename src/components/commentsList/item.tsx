@@ -295,8 +295,8 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     initialValue={`
                         <p>
                         <a href="${HostURL}/profile/${comment.author.username}/">${comment.author.name}</a>
-                        <br data-mce-bogus="1">
                         </p>
+                        <p><br data-mce-bogus="1"></p>
                     `}
                     onInit={(editor) => {
                         setTimeout(() => {
