@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type FC } from 'react';
+import {
+    // lazy, 
+    // Suspense, 
+    useCallback, useEffect, useMemo, useState, type FC
+} from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { getCommentsPerms, getUser } from '../../services/auth/slice';
 import styles from './styles.module.css';
@@ -15,6 +19,9 @@ import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
 import { openModal } from '../../services/modal/slice';
 import { SupportModal } from '../modals/support';
 import { openViewer } from '../../services/viewer/slice';
+// import { CommentFormSkeleton } from '../skeletons/commentForm';
+
+// const CommentForm = lazy(() => import('../../components/forms/newComment').then(mod => ({ default: mod.CommentForm })));
 
 const DELTA = 5 * 60 * 1000;
 
@@ -289,6 +296,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                 </div>
             </div>
             {showReplyForm && isShowReply ? (
+                // <Suspense fallback={<CommentFormSkeleton />}>
                 <CommentForm
                     replyTo={comment.on_comment ? comment.on_comment : comment.id}
                     onSuccess={() => { setShowReplyForm(false); setShowReply(true) }}
@@ -307,8 +315,10 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         }, 200)
                     }}
                 />
+                // </Suspense>
             ) : null}
             {showEditForm && isShowEditBtns ? (
+                // <Suspense fallback={<CommentFormSkeleton />}>
                 <CommentForm
                     editId={comment.id}
                     style={{
@@ -318,13 +328,16 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     initialValue={comment.content}
                     initialAttach={comment.images}
                 />
+                // </Suspense>
             ) : null}
             {comment.reply && comment.reply.length && showReply ? (
                 <>
                     {comment.reply?.map((item) => (
+                        // <Suspense fallback={<CommentFormSkeleton />}>
                         <Comment
                             comment={item} key={`comment_${comment.id}-${item.id}`}
                         />
+                        // </Suspense>
                     ))}
                 </>
             ) : null}

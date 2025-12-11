@@ -1,0 +1,55 @@
+@keyframes form-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.wrap{
+    position: relative;
+    width: 100%;
+    display: grid;
+    grid-template: 'av form send' auto / 60px 1fr 60px;
+    gap: 0 20px;
+}
+
+.av,
+.send{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e5e0d7;
+}
+
+.av{
+    grid-area: av;
+    justify-self: end;
+}
+
+.form{
+    grid-area: form;
+    position: relative;
+    width: 100%;
+    height: 60px;
+    background-color: #e5e0d7;
+    border-radius: 10px;
+
+    background: linear-gradient(90deg, #e5e0d7 25%, #fdf8ef 37%, #e5e0d7 63%);
+    background-size: 200% 100%;
+    animation: form-shimmer 2s linear infinite;
+    animation-delay: 2s;
+}
+
+.send{
+    grid-area: send;
+    justify-self: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .form {
+        animation: none;
+        background-position: 50% 0;
+    }
+}

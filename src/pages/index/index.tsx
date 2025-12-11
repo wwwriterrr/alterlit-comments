@@ -4,8 +4,15 @@ import { CommentForm } from '../../components/forms/newComment';
 import { useAppSelector } from '../../services/store';
 import { getCommentsPerms, getCommentsPermsChecked, getUser } from '../../services/auth/slice';
 import { LoaderSpinnerIcon } from '../../components/icons/loader';
-import { type FC } from 'react';
+import { 
+    // lazy, 
+    // Suspense, 
+    type FC 
+} from 'react';
 import { WarningIcon } from '../../components/icons/warning';
+// import { CommentFormSkeleton } from '../../components/skeletons/commentForm';
+
+// const CommentForm = lazy(() => import('../../components/forms/newComment').then(mod => ({default: mod.CommentForm})));
 
 const PermsError: FC<{ msg: string }> = ({ msg }) => {
     return (
@@ -33,7 +40,9 @@ export const Comments = () => {
                             {perms.comments_send ? (
                                 <>
                                     {user ? (
+                                        // <Suspense fallback={<CommentFormSkeleton />}>
                                         <CommentForm />
+                                        // </Suspense>
                                     ) : (
                                         <PermsError msg="Чтобы оставлять комментарии, необходимо авторизоваться в системе." />
                                     )}
