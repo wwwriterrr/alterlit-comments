@@ -99,7 +99,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         setShowReply(!showReply);
     }, [showReply]);
 
-    const liked = useMemo(() => comment.likes?.includes(1), [comment.likes]);
+    const liked = useMemo(() => comment.likes?.includes(user?.id || 0), [comment.likes, user?.id]);
 
     const editedOpacity = useMemo(() => (showEditForm ? 0.3 : undefined), [showEditForm]);
 
