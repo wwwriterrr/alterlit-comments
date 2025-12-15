@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from '../../services/store';
 import { getCommentsPerms, getUser } from '../../services/auth/slice';
 import styles from './styles.module.css';
 import { HostURL } from '../../core/constants';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { LikeIcon } from '../icons/like';
 import { CloseIcon } from '../icons/close';
 import { ReplyIcon } from '../icons/reply';
@@ -186,19 +186,27 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     opacity: removePending ? .3 : undefined,
                 }}
             >
-                <div className={styles.comment__avatar}>
+                <a
+                    className={styles.comment__avatar}
+                    href={`/profile/${comment.author.username}/`}
+                    target="_blank"
+                >
                     <img
                         className={styles.comment__avatar__image}
                         src={`${HostURL}${comment.author.avatar}`}
                         alt={comment.author.name}
                     />
-                </div>
+                </a>
                 <div className={styles.comment__body}>
                     <div className={styles.comment__head}>
                         <div className={styles.comment__user}>
-                            <Link className={styles.comment__user__link} to={`/profile/${comment.author.username}/`}>
+                            <a
+                                className={styles.comment__user__link}
+                                href={`/profile/${comment.author.username}/`}
+                                target="_blank"
+                            >
                                 {comment.author.name}
-                            </Link>
+                            </a>
                         </div>
                         <div className={styles.comment__dt}>{dt}</div>
                     </div>
