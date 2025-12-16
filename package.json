@@ -16,6 +16,7 @@
     "@mui/material": "^7.3.5",
     "@reduxjs/toolkit": "^2.9.0",
     "@tinymce/tinymce-react": "^6.3.0",
+    "eslint-plugin-react-compiler": "^0.0.0-experimental-6cef588-20250815",
     "motion": "^12.23.24",
     "react": "^19.2.0",
     "react-device-detect": "^2.2.3",

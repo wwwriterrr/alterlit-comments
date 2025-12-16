@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../services/store';
 import { getViewerOpen, getViewerCurrentImage } from '../../services/viewer/slice';
 import styles from './styles.module.css';
 import { CloseIcon } from '../../components/icons/close';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { HostURL } from '../../core/constants';
 import { CloseViewer } from '../../services/viewer/actions';
 
@@ -13,9 +13,9 @@ const Viewer = () => {
     const currentImage = useAppSelector(getViewerCurrentImage)!;
     const isViewerOpen = useAppSelector(getViewerOpen);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         dispatch(CloseViewer({}));
-    };
+    }, [dispatch]);
 
     const handleOverlayClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
@@ -34,7 +34,7 @@ const Viewer = () => {
             document.addEventListener('keydown', handleEscape);
             return () => document.removeEventListener('keydown', handleEscape);
         }
-    }, [isViewerOpen]);
+    }, [isViewerOpen, handleClose]);
 
     useEffect(() => {
         if (isViewerOpen) {
