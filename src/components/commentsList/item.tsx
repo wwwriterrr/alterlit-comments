@@ -101,7 +101,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
     const liked = useMemo(() => comment.likes?.includes(user?.id || 0), [comment.likes, user?.id]);
 
-    const editedOpacity = useMemo(() => (showEditForm ? 0.3 : undefined), [showEditForm]);
+    const editedOpacity = useMemo(() => (showEditForm && isShowEditBtns ? 0.3 : undefined), [showEditForm, isShowEditBtns]);
 
     const dt = useMemo(
         () => {

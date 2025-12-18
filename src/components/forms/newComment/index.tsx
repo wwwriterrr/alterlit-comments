@@ -14,6 +14,7 @@ import { animateCloseModal } from '../../../services/modal/actions';
 import { CloseIcon } from '../../icons/close';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import { isMobile } from 'react-device-detect';
+import { OkIcon } from '../../icons/ok';
 
 type TProps = {
     initialValue?: string,
@@ -297,7 +298,13 @@ export const CommentForm: FC<TProps> = ({
                 {pending ? (
                     <LoaderSpinnerIcon size={24} fill="#fff" />
                 ) : (
-                    <SendIcon size={24} fill="#fff" />
+                    <>
+                        {editId ? (
+                            <OkIcon size={24} fill="#fff" />
+                        ) : (
+                            <SendIcon size={24} fill="#fff" />
+                        )}
+                    </>
                 )}
             </button>
         </div>
