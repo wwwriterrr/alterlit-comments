@@ -193,6 +193,7 @@ export const CommentForm: FC<TProps> = ({
                             '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding,background-color,',
                         },
                         // forced_root_block: 'div',
+                        contextmenu: false,
                         content_style: `
                             .alt-comment-form{
                                 font-size: 16px;
