@@ -208,7 +208,9 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                                 {comment.author.name}
                             </a>
                         </div>
-                        <div className={styles.comment__dt}>{dt}</div>
+                        <div className={styles.comment__dt}>
+                            <a href={`${location.pathname}?anchor=comments&comment_id=${comment.id}`} target="_blank">{dt}</a>
+                        </div>
                     </div>
                     {comment.images?.length ? (
                         <div
