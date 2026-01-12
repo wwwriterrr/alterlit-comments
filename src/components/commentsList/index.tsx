@@ -1,12 +1,14 @@
 import { useLocation, useParams } from 'react-router-dom';
 import styles from './styles.module.css';
-import { useCallback, useEffect, useRef, useState, type FC } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { CommentsFetch, commentsWsConnect, commentsWsDisconnect, type TCommentsFetchProps } from '../../services/comments/actions';
 import { WsURL } from '../../core/constants';
 import { getComments } from '../../services/comments/slice';
 import { Comment } from './item';
 import { LoaderSpinnerIcon } from '../icons/loader';
+import { getUser } from '../../services/auth/slice';
+import { CommentsAdminManage } from './manage';
 
 export const CommentsList: FC = () => {
     const [pending, setPending] = useState<boolean>(false);
@@ -20,8 +22,11 @@ export const CommentsList: FC = () => {
 
     const dispatch = useAppDispatch();
 
+    const user = useAppSelector(getUser);
     const comments = useAppSelector(getComments);
     const commentsAfterExist = useAppSelector((state) => state.comments.afterExist);
+
+    const isAdmin = useMemo(() => user?.perms.includes('admin'), [user]);
 
     const handleMore = useCallback(() => {
         if (!commentsAfterExist) return;
@@ -121,18 +126,23 @@ export const CommentsList: FC = () => {
             ) : (
                 <>
                     {comments.length ? (
-                        <div className={styles.list}>
-                            {commentsAfterExist ? (
-                                <button className={styles.moreBtn} onClick={handleMore}>
-                                    {pendingMore ? (
-                                        <LoaderSpinnerIcon size={24} fill="#444" />
-                                    ) : 'Предыдущие комментарии'}
-                                </button>
+                        <>
+                            {isAdmin ? (
+                                <CommentsAdminManage />
                             ) : null}
-                            {comments.map((item) => (
-                                <Comment comment={item} key={`comment-${item.id}`} />
-                            ))}
-                        </div>
+                            <div className={styles.list}>
+                                {commentsAfterExist ? (
+                                    <button className={styles.moreBtn} onClick={handleMore}>
+                                        {pendingMore ? (
+                                            <LoaderSpinnerIcon size={24} fill="#444" />
+                                        ) : 'Предыдущие комментарии'}
+                                    </button>
+                                ) : null}
+                                {comments.map((item) => (
+                                    <Comment comment={item} key={`comment-${item.id}`} />
+                                ))}
+                            </div>
+                        </>
                     ) : (
                         <div className={styles.empty}>Комментарии отсутствуют</div>
                     )}

@@ -14,6 +14,7 @@ export interface IInitialState {
     connectionError: string | null;
     socket: WebSocket | null;
     afterExist: boolean;
+    selected: number[],
 }
 
 const initialState: IInitialState = {
@@ -22,6 +23,7 @@ const initialState: IInitialState = {
     connectionError: '',
     socket: null,
     afterExist: false,
+    selected: [],
 };
 
 export const CommentsSlice = createSlice({
@@ -91,7 +93,7 @@ export const CommentsSlice = createSlice({
                 } else {
                     // Обновляем комментарий верхнего уровня
                     state.comments = state.comments.map((item) =>
-                        item.id === updatedComment.id ? {...updatedComment, reply: item.reply} : item
+                        item.id === updatedComment.id ? { ...updatedComment, reply: item.reply } : item
                     );
                 }
             } else if (action.payload.message.type === 'remove_comment') {
@@ -164,6 +166,24 @@ export const CommentsSlice = createSlice({
         // wsSend: (state, action: PayloadAction<unknown>) => {
         //     state.socket?.send(JSON.stringify(action.payload));
         // },
+        setSelectedComments: (state, action: PayloadAction<number[]>) => {
+            state.selected = action.payload;
+        },
+        addSelectedComment: (state, action: PayloadAction<number>) => {
+            if (!state.selected.includes(action.payload)) {
+                state.selected.push(action.payload);
+            }
+        },
+        removeSelectedComment: (state, action: PayloadAction<number>) => {
+            state.selected = state.selected.filter((id) => id !== action.payload);
+        },
+        toggleSelectedComment: (state, action: PayloadAction<number>) => {
+            if (state.selected.includes(action.payload)) {
+                state.selected = state.selected.filter((id) => id !== action.payload);
+            } else {
+                state.selected.push(action.payload);
+            }
+        },
     },
     selectors: {
         getComments: (state) => state.comments,
@@ -184,12 +204,31 @@ export const CommentsSlice = createSlice({
             }
         ),
         getCommentsAfterExist: (state) => state.afterExist,
+        getSelectedComments: (state) => state.selected,
     },
 });
 
-export const { setComments, addComments, setCommentsAfterExist, wsClose, wsConnecting, wsError, wsMessage, wsOpen } = CommentsSlice.actions;
+export const {
+    setComments,
+    addComments,
+    setCommentsAfterExist,
+    wsClose,
+    wsConnecting,
+    wsError,
+    wsMessage,
+    wsOpen,
+    setSelectedComments,
+    addSelectedComment,
+    removeSelectedComment,
+    toggleSelectedComment,
+} = CommentsSlice.actions;
 
-export const { getComments, getComment, getCommentsAfterExist } = CommentsSlice.selectors;
+export const {
+    getComments,
+    getComment,
+    getCommentsAfterExist,
+    getSelectedComments,
+} = CommentsSlice.selectors;
 
 export default CommentsSlice;
 

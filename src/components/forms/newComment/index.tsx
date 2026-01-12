@@ -85,11 +85,100 @@ export const CommentForm: FC<TProps> = ({
         if (!value) return;
 
         const clean = (content: string) => {
-            content = content.replace(/(?:<p>\s*<\/p>\s*)+/gi, '');
-            content = content.replace(/<span>&nbsp;<\/span>/g, ' ');
+            // content = content.replace(/(?:<p>\s*<\/p>\s*)+/gi, '');
+            // content = content.replace(/<span>&nbsp;<\/span>/g, ' ');
+            // content = content.replace(/&nbsp;/g, ' ');
+            // content = content.replace(/\n+/g, '\n');
+            // return content;
+
+            if (!content) return '';
+
+            // Быстрая предварительная нормализация, чтобы упростить парсинг
+            content = content.replace(/<span[^>]*>&nbsp;<\/span>/gi, ' ');
             content = content.replace(/&nbsp;/g, ' ');
-            content = content.replace(/\n+/g, '\n');
-            return content;
+
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(content, 'text/html');
+                const body = doc.body;
+                const nodes = Array.from(body.childNodes);
+                const out: Node[] = [];
+                let lastWasEmpty = false;
+
+                const isEmptyParagraph = (el: HTMLElement) => {
+                    // Считаем "пустым", если внутри нет видимого текста и нет значимых элементов (img, video ...)
+                    // но допускаем <br> — он обозначает пустую строку.
+                    const text = (el.textContent || '').replace(/\u00A0/g, ' ').trim();
+                    const hasMedia = !!el.querySelector('img, video, iframe, picture, svg, [data-src]');
+                    // считаем пустым, если нет текста и нет медиа; <br> допустим (будем нормализовать)
+                    return !text && !hasMedia;
+                }
+
+                for (const node of nodes) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        // игнорируем чисто пробельные ТН
+                        if (!(node.textContent || '').trim()) continue;
+                        // если есть видимый текст в body как текстный узел — обернём в <p>
+                        const p = doc.createElement('p');
+                        p.textContent = node.textContent || '';
+                        out.push(p);
+                        lastWasEmpty = false;
+                        continue;
+                    }
+
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const el = node as HTMLElement;
+                        const tag = el.tagName.toLowerCase();
+
+                        if (tag === 'p') {
+                            if (isEmptyParagraph(el)) {
+                                if (!lastWasEmpty) {
+                                    const p = doc.createElement('p');
+                                    p.innerHTML = '<br>';
+                                    out.push(p);
+                                    lastWasEmpty = true;
+                                } // иначе игнорируем дополнительные пустые p
+                            } else {
+                                out.push(el.cloneNode(true));
+                                lastWasEmpty = false;
+                            }
+                            continue;
+                        }
+
+                        // Если элемент — блок-обёртка, но внутри может быть пустой абзац и т.д.
+                        // просто переносим его как есть и сбрасываем флаг пустоты
+                        out.push(el.cloneNode(true));
+                        lastWasEmpty = false;
+                    }
+                }
+
+                // Удаляем ведущие/замыкающие пустые абзацы
+                while (out.length && out[0].nodeType === Node.ELEMENT_NODE && (out[0] as Element).tagName.toLowerCase() === 'p' && !((out[0] as HTMLElement).textContent || '').trim()) {
+                    out.shift();
+                }
+                while (out.length && out[out.length - 1].nodeType === Node.ELEMENT_NODE && (out[out.length - 1] as Element).tagName.toLowerCase() === 'p' && !((out[out.length - 1] as HTMLElement).textContent || '').trim()) {
+                    out.pop();
+                }
+
+                const wrapper = doc.createElement('div');
+                out.forEach(n => wrapper.appendChild(n));
+                let result = wrapper.innerHTML;
+
+                // Финальная зачистка
+                result = result.replace(/<span[^>]*>&nbsp;<\/span>/gi, ' ');
+                result = result.replace(/&nbsp;/g, ' ');
+                result = result.replace(/\n{2,}/g, '\n');
+
+                return result.trim();
+            } catch (err) {
+                console.error('Error cleaning comment content:', err);
+                // Фолбэк на regex (если вдруг DOMParser недоступен)
+                content = content.replace(/(?:<p>\s*<\/p>\s*)+/gi, '<p><br></p>');
+                content = content.replace(/<span[^>]*>&nbsp;<\/span>/gi, ' ');
+                content = content.replace(/&nbsp;/g, ' ');
+                content = content.replace(/\n+/g, '\n');
+                return content.trim();
+            }
         }
 
         console.log('Submit comment:', clean(value));

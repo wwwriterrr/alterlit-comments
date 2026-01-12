@@ -1,7 +1,8 @@
 import {
     // lazy, 
     // Suspense, 
-    useCallback, useEffect, useMemo, useState, type FC
+    useCallback, useEffect, useMemo, useState, type FC,
+    type MouseEventHandler
 } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { getCommentsPerms, getUser } from '../../services/auth/slice';
@@ -19,6 +20,7 @@ import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
 import { openModal } from '../../services/modal/slice';
 import { SupportModal } from '../modals/support';
 import { openViewer } from '../../services/viewer/slice';
+import { getSelectedComments, toggleSelectedComment } from '../../services/comments/slice';
 // import { CommentFormSkeleton } from '../skeletons/commentForm';
 
 // const CommentForm = lazy(() => import('../../components/forms/newComment').then(mod => ({ default: mod.CommentForm })));
@@ -57,6 +59,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
     const user = useAppSelector(getUser);
     const perms = useAppSelector(getCommentsPerms);
+    const selected = useAppSelector(getSelectedComments);
 
     const isAdmin = useMemo(() => user?.perms.includes('admin'), [user]);
 
@@ -161,6 +164,14 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         dispatch(openModal({ content: (<SupportModal commentId={comment.id} />) }));
     }, [dispatch, comment.id])
 
+    const avatarClickHandler: MouseEventHandler = useCallback((e) => {
+        if(isAdmin){
+            e.preventDefault();
+
+            dispatch(toggleSelectedComment(comment.id));
+        }
+    }, [isAdmin, dispatch, comment.id]);
+
     useEffect(() => {
         if (isAdmin) return;
 
@@ -181,7 +192,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
         <>
             <div
                 id={`comment-${comment.id}`}
-                className={`${styles.comment} ${comment.on_comment ? styles.comment_reply : ''} ${anchorCommentId === comment.id ? styles.comment_highlight : ''}`}
+                className={`${styles.comment} ${comment.on_comment ? styles.comment_reply : ''} ${anchorCommentId === comment.id ? styles.comment_highlight : ''} ${selected.includes(comment.id) ? styles.comment_selected : ''}`}
                 style={{
                     opacity: removePending ? .3 : undefined,
                 }}
@@ -190,6 +201,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     className={styles.comment__avatar}
                     href={`/profile/${comment.author.username}/`}
                     target="_blank"
+                    onClick={avatarClickHandler}
                 >
                     <img
                         className={styles.comment__avatar__image}
