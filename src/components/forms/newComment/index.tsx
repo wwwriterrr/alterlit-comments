@@ -277,7 +277,7 @@ export const CommentForm: FC<TProps> = ({
                         // quickbars_insert_toolbar: 'emoticons',
                         quickbars_insert_toolbar: false,
                         quickbars_selection_toolbar: isMobile ? false : 'bold italic underline strikethrough | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull | removeformat',
-                        valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style],s[style]',
+                        valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style],s[style],br',
                         valid_styles: {
                             '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding,background-color,',
                         },

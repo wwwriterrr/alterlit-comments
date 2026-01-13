@@ -157,6 +157,36 @@ export const CommentsRemove = createAsyncThunk(
     }
 )
 
+export const CommentsGroupRemove = createAsyncThunk(
+    'comments/groupRemove',
+    async ({commentIds, type='post', instanceId, signal}: {commentIds: number[], type?: string, instanceId: string | number, signal?: AbortSignal}, {
+        rejectWithValue, 
+        dispatch,
+    }) => {
+        try{
+            const url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
+
+            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({comment_ids: commentIds}),
+                signal,
+            })
+
+            if (!response.ok) {
+                return rejectWithValue('Failed to group remove comments');
+            }
+
+            return;
+        } catch (err) {
+            return rejectWithValue(err);
+        }
+    }
+)
+
 export const CommentsLike = createAsyncThunk(
     'comments/Like',
     async ({contentType='comment', objectId, signal}: {contentType?: string, objectId: number, signal?: AbortSignal}, {
