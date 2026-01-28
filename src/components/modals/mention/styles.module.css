@@ -1,0 +1,59 @@
+.wrap{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.row{
+
+}
+
+.items{
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    place-content: flex-start;
+    gap: 10px;
+    height: 200px;
+    overflow: auto;
+}
+
+.items_pending{
+    opacity: .6;
+}
+
+.empty{
+    opacity: .6;
+}
+
+.item{
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.itemsEmpty{
+    width: 100%;
+    opacity: .6;
+}
+
+.item__avatar{
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #e3e3e3;
+    object-fit: cover;
+    object-position: center;
+    cursor: pointer;
+}
+
+.item__name{
+    position: relative;
+    white-space: nowrap;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type CSSProperties, type FC } from 'react';
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type FC } from 'react';
 import styles from './styles.module.css';
 import { Editor } from '@tinymce/tinymce-react';
 import { SendIcon } from '../../icons/send';
@@ -15,6 +15,9 @@ import { CloseIcon } from '../../icons/close';
 import type { Editor as TinyMCEEditor } from 'tinymce';
 import { isMobile } from 'react-device-detect';
 import { OkIcon } from '../../icons/ok';
+import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
+import { MentionIcon } from '../../icons/mention';
+import { MentionModal } from '../../modals/mention';
 
 type TProps = {
     initialValue?: string,
@@ -227,6 +230,17 @@ export const CommentForm: FC<TProps> = ({
         setAttach(attach.filter(item => item.id !== id));
     }, [attach])
 
+    const handleMentionClick = useCallback(() => {
+        dispatch(openModal({
+            content: (<MentionModal editorRef={editorRef} />),
+        }))
+    }, [dispatch])
+
+    const dialActions = useMemo(() => [
+        { icon: <MentionIcon size={20} fill="#000" />, name: 'Add mention', action: handleMentionClick },
+        { icon: <AddImageIcon size={20} fill="#000" />, name: 'Add Image', action: handleAttachClick },
+    ], [handleAttachClick, handleMentionClick])
+
     return (
         <div
             className={`${styles.wrap} ${className ? className : ''}`}
@@ -247,13 +261,26 @@ export const CommentForm: FC<TProps> = ({
                     ))}
                 </div>
             ) : null}
-            <button
+            {/* <button
                 type="button"
                 className={`${styles.btn} ${styles.attachBtn}`}
                 onClick={handleAttachClick}
             >
                 <AddImageIcon size={24} fill="#000" />
-            </button>
+            </button> */}
+            <SpeedDial
+                ariaLabel="Attach actions"
+                className={styles.speedDial}
+                icon={<SpeedDialIcon />}
+            >
+                {dialActions.map((action) => (
+                    <SpeedDialAction
+                        icon={action.icon}
+                        key={action.name}
+                        onClick={action.action}
+                    />
+                ))}
+            </SpeedDial>
             <div className={`alt-comment-form ${styles.area}`} style={{
                 borderColor: editId ? '#0079f0' : replyTo ? '#e3b287' : undefined
             }}>
