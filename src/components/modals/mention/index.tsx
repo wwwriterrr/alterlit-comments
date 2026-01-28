@@ -5,13 +5,24 @@ import { useAppDispatch } from '../../../services/store';
 import { CommentsUserAutocomplete } from '../../../services/comments/actions';
 import { HostURL } from '../../../core/constants';
 import type { Editor as TinyMCEEditor } from 'tinymce';
+import { animateCloseModal } from '../../../services/modal/actions';
 
 const MentionItem: FC<{item: TAutocompleteUser, editorRef: RefObject<TinyMCEEditor | null>}> = ({item, editorRef}) => {
     
+    const dispatch = useAppDispatch();
+
     const handleClick = useCallback(() => {
         const editor = editorRef.current;
-        console.log(editor);
-    }, [editorRef])
+
+        if(!editor) return;
+
+        editor.execCommand('mceInsertContent', false, `<a href="/user/${item.id}" data-mention-id="${item.id}">${item.name}</a>&nbsp;`);
+        
+        dispatch(animateCloseModal(300))
+            .then(() => {
+                editor.focus();
+            })
+    }, [editorRef, item, dispatch])
     
     return (
         <div className={styles.item} title={item.name}>
