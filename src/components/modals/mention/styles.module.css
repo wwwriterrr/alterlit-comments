@@ -1,15 +1,13 @@
-.wrap{
+.wrap {
     position: relative;
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.row{
-    
-}
+.row {}
 
-.items{
+.items {
     position: relative;
     display: flex;
     flex-wrap: wrap;
@@ -19,27 +17,37 @@
     overflow: auto;
 }
 
-.items_pending{
+.items_pending {
     opacity: .6;
 }
 
-.empty{
+.empty {
     opacity: .6;
 }
 
-.item{
+.item {
     position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 6px 2px 2px;
+    border-radius: 30px;
 }
 
-.itemsEmpty{
+.item:hover {
+    background-color: #eee9e0;
+}
+
+.itemsEmpty {
     width: 100%;
     opacity: .6;
 }
 
-.item__avatar{
+.item__avatar {
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -49,7 +57,7 @@
     cursor: pointer;
 }
 
-.item__name{
+.item__name {
     position: relative;
     white-space: nowrap;
     max-width: 10rem;

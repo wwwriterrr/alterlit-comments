@@ -10,6 +10,7 @@ import {
     type FC 
 } from 'react';
 import { WarningIcon } from '../../components/icons/warning';
+import { translateRu } from '../../core/utils';
 // import { CommentFormSkeleton } from '../../components/skeletons/commentForm';
 
 // const CommentForm = lazy(() => import('../../components/forms/newComment').then(mod => ({default: mod.CommentForm})));
@@ -48,11 +49,11 @@ export const Comments = () => {
                                     )}
                                 </>
                             ) : (
-                                <PermsError msg={perms.comments_send_detail} />
+                                <PermsError msg={translateRu(perms.comments_send_detail)} />
                             )}
                         </>
                     ) : (
-                        <PermsError msg={perms.comments_list_detail} />
+                        <PermsError msg={translateRu(perms.comments_list_detail)} />
                     )}
                 </>
             ) : (
