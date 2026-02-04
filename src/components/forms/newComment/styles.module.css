@@ -120,7 +120,7 @@
 
 @media screen and (max-width: 600px) {
     .wrap {
-        grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / auto 1fr auto;
+        grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / 40px 1fr auto;
         gap: 0 10px;
         padding: 0 14px;
     }
@@ -128,6 +128,7 @@
 
 @media screen and (max-width: 450px) {
     .wrap {
+        grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / 30px 1fr auto;
         gap: 0 6px;
         padding: 0 10px;
         padding-left: 10px !important;
@@ -137,6 +138,20 @@
         width: 30px;
         height: 30px;
         padding: 5px;
+    }
+
+    .speedDial {
+        right: -12px;
+    }
+
+    .speedDial > :global(.MuiButtonBase-root){
+        width: 30px;
+        height: 30px;
+        min-height: 30px;
+    }
+
+    .speedDial > div > :global(.MuiButtonBase-root){
+        left: 6px;
     }
 
     .btn>svg {
