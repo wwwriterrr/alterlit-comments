@@ -16,7 +16,7 @@ const MentionItem: FC<{item: TAutocompleteUser, editorRef: RefObject<TinyMCEEdit
 
         if(!editor) return;
 
-        editor.execCommand('mceInsertContent', false, `<a href="https://alterlit.ru/profile/${item.id}" data-mention-id="${item.id}">${item.name}</a>&nbsp;`);
+        editor.execCommand('mceInsertContent', false, `<a href="https://alterlit.ru/profile/${item.username}/" data-mention-id="${item.id}">${item.name}</a>&nbsp;`);
         
         dispatch(animateCloseModal(300))
             .then(() => {
