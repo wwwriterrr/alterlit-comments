@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# Alterlit Comments
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Встраиваемый React-компонент блока комментариев для литературного сайта [Alterlit](https://alterlit.ru).
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Дерево комментариев** — топик-комментарии и ответы (вложенность — один уровень).
+- **Реальное время** — новые комментарии, правки, удаления, лайки и дизлайки приходят мгновенно по WebSocket.
+- **Лайки** — отметка «нравится» с анимацией и счётчиком.
+- **Редактор TinyMCE** — форматирование текста, цитаты, ссылки, эмодзи.
+- **Упоминания пользователей** — автодополнение по `@` прямо в редакторе и через модальное окно.
+- **Изображения** — прикрепление картинок из галереи или загрузка своих файлов (до 10 шт.).
+- **Просмотр изображений** — лайтбокс (вьювер) с анимациями `framer-motion`.
+- **Администрирование** — массовое выделение и удаление комментариев по клику на аватар.
+- **Права доступа** — гибкое управление: список/отправка комментариев, блокировка, модерация.
+- **Жалобы** — отправка жалобы на комментарий в службу поддержки.
+- **Якорные ссылки** — переход к конкретному комментарию через `?anchor=comments&comment_id=N`.
 
-## React Compiler
+## Технологии
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [React 19](https://react.dev) + [TypeScript](https://www.typescriptlang.org) + [Vite](https://vite.dev)
+- [Redux Toolkit](https://redux-toolkit.js.org) — состояние, асинхронные операции, WebSocket-слой
+- [TinyMCE](https://www.tiny.cloud) — rich-text редактор
+- [MUI](https://mui.com) — базовые UI-компоненты (TextField, SpeedDial)
+- [motion](https://motion.dev) — анимации
+- [React Compiler](https://react.dev/learn/react-compiler) — автоматическая мемоизация
 
-## Expanding the ESLint configuration
+## Как встроить
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Компонент монтируется в блок с id `comments-root` и работает по адресу `/post/:postId/`.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+npm install
+npm run dev        # разработка
+npm run build      # сборка (tsc + vite)
+npm run lint       # eslint
+npm run preview    # предпросмотр собранного бандла
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Структура
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+├── components/     # UI: список комментариев, форма, модалки, иконки, скелетоны
+├── HOC/            # Провайдеры: авторизация, модальные окна, просмотр изображений
+├── services/       # Redux: срезы (auth, comments, modal, viewer), API-действия, WebSocket-мидлварь
+├── core/           # Типы, константы, утилиты, хуки
+└── pages/          # Страница комментариев
+```
+
+## API
+
+Клиент работает с REST API `https://alterlit.ru/api/v1/` и WebSocket `wss://alterlit.ru/ws/`.
+
+Основные сущности:
+
+- `comments/<type>/<id>/` — список комментариев, отправка, массовое удаление
+- `comment/<id>/` — получение, удаление, редактирование конкретного комментария
+- `like/<content_type>/<id>/` — лайк/дизлайк
+- `autocomplete/users/` — поиск пользователей для упоминаний
+- `images/` — галерея изображений и загрузка файлов
+- `support/task/` — отправка жалобы
+
+Авторизация — по JWT (`access`/`refresh`) с автоматическим обновлением токена. Токены хранятся в `localStorage` и обновляются каждые 7 минут.
+
+## Лицензия
+
+Исходный код распространяется на условиях лицензии MIT, см. [LICENSE](LICENSE).

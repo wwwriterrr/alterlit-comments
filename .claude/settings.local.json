@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /home/bob/share/Comments/alterlit-comments log --oneline)",
+      "Bash(git -C /home/bob/share/Comments/alterlit-comments status --short)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}
