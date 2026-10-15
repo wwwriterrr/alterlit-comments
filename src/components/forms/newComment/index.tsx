@@ -13,7 +13,6 @@ import { AttachModal } from '../../modals/attach';
 import { animateCloseModal } from '../../../services/modal/actions';
 import { CloseIcon } from '../../icons/close';
 import type { Editor as TinyMCEEditor } from 'tinymce';
-import { isMobile } from 'react-device-detect';
 import { OkIcon } from '../../icons/ok';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import { MentionIcon } from '../../icons/mention';
@@ -54,6 +53,9 @@ type TTinyAutocompleteItem = {
     }[],
 }
 
+/** Сенсорный экран без мыши — там всплывающая панель форматирования мешает (было react-device-detect). */
+const isTouch = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
 export const CommentForm: FC<TProps> = ({
     initialValue = '',
     initialAttach = [],
@@ -67,6 +69,7 @@ export const CommentForm: FC<TProps> = ({
     const [value, setValue] = useState<string>(initialValue);
     const [attach, setAttach] = useState<ICommentImage[]>(initialAttach);
     const [pending, setPending] = useState<boolean>(false);
+    const [error, setError] = useState<string>('');
 
     const { postId } = useParams();
 
@@ -187,6 +190,7 @@ export const CommentForm: FC<TProps> = ({
         console.log('Submit comment:', clean(value));
 
         setPending(true);
+        setError('');
         dispatch(CommentsSend({
             instanceId: postId,
             type: 'post',
@@ -204,6 +208,7 @@ export const CommentForm: FC<TProps> = ({
                 setAttach([]);
                 onSuccess?.();
             })
+            .catch((err: unknown) => setError(typeof err === 'string' ? err : 'Не удалось отправить комментарий.'))
             .finally(() => setPending(false));
     }
 
@@ -303,7 +308,7 @@ export const CommentForm: FC<TProps> = ({
                         ],
                         // quickbars_insert_toolbar: 'emoticons',
                         quickbars_insert_toolbar: false,
-                        quickbars_selection_toolbar: isMobile ? false : 'bold italic underline strikethrough | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull | removeformat',
+                        quickbars_selection_toolbar: isTouch() ? false : 'bold italic underline strikethrough | forecolor backcolor | blockquote quicklink | alignleft aligncenter alignright alignfull | removeformat',
                         valid_elements: 'p[style],strong/b,em,span[style],a[href|target=_blank],blockquote[style],s[style],br',
                         valid_styles: {
                             '*': 'font-size,font-family,font-style,font-weight,color,text-decoration,text-align,margin,padding,background-color,',
@@ -375,7 +380,7 @@ export const CommentForm: FC<TProps> = ({
                                                         items: [
                                                             {
                                                                 type: 'cardimage' as const,
-                                                                src: `${HostURL}${item.avatar}`,
+                                                                src: item.avatar ? `${HostURL}${item.avatar}` : '/assets/img/noavatar_3.png',
                                                                 alt: item.name,
                                                                 classes: ['tiny-autocomplete-item']
                                                             },
@@ -424,6 +429,7 @@ export const CommentForm: FC<TProps> = ({
                     </>
                 )}
             </button>
+            {error && <p className={styles.error} role="alert">{error}</p>}
         </div>
     )
 }

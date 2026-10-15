@@ -26,7 +26,7 @@ const MentionItem: FC<{item: TAutocompleteUser, editorRef: RefObject<TinyMCEEdit
     
     return (
         <div className={styles.item} title={item.name} onClick={handleClick}>
-            <img className={styles.item__avatar} src={`${HostURL}${item.avatar}`} alt={item.name}/>
+            <img className={styles.item__avatar} src={item.avatar ? `${HostURL}${item.avatar}` : '/assets/img/noavatar_3.png'} alt={item.name}/>
             <div className={styles.item__name}>{item.name}</div>
         </div>
     )

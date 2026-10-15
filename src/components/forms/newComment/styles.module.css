@@ -9,7 +9,7 @@
 .wrap {
     position: relative;
     display: grid;
-    grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto / 60px 1fr 60px;
+    grid-template: 'tmp1 alist tmp2' auto 'attach area submit' auto '. error .' auto / 60px 1fr 60px;
     gap: 0 20px;
     width: 100%;
     /* width: 600px;
@@ -158,4 +158,14 @@
         width: 100%;
         height: 100%;
     }
+}
+/* причина, по которой сервер не принял комментарий (блокировка, время правки вышло и т. п.) */
+.error {
+    grid-area: error;
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #f4e0dd;
+    color: #8c3a31;
+    font-size: 14px;
 }

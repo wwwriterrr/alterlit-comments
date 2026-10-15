@@ -26,6 +26,49 @@ const initialState: IInitialState = {
     selected: [],
 };
 
+/** Комментарий или ответ по id. */
+function findComment(items: IComment[], id: number): IComment | undefined {
+    for (const item of items) {
+        if (item.id === id) return item;
+        const reply = item.reply?.find((r) => r.id === id);
+        if (reply) return reply;
+    }
+    return undefined;
+}
+
+/**
+ * Вставить или обновить: один и тот же комментарий приходит и в ответе API, и по сокету
+ * (new_comment, затем change_comment с картинками) — дублей быть не должно.
+ * Ответы и лайки, которых нет в событии, сохраняем.
+ */
+function upsertComment(items: IComment[], comment: IComment) {
+    const existing = findComment(items, comment.id);
+    if (existing) {
+        const { reply, likes } = existing;
+        Object.assign(existing, comment, {
+            reply: comment.reply ?? reply,
+            likes: comment.likes ?? likes,
+        });
+        return;
+    }
+    if (comment.on_comment) {
+        const parent = items.find((item) => item.id === comment.on_comment);
+        if (parent) parent.reply = [...(parent.reply || []), comment];
+        return;
+    }
+    items.push({ ...comment, reply: comment.reply ?? [] });
+}
+
+function removeComment(state: { comments: IComment[] }, id: number, onComment?: number) {
+    if (onComment) {
+        const parent = state.comments.find((item) => item.id === onComment);
+        if (parent) parent.reply = (parent.reply || []).filter((r) => r.id !== id);
+        return;
+    }
+    // верхний — вместе с веткой ответов
+    state.comments = state.comments.filter((item) => item.id !== id);
+}
+
 export const CommentsSlice = createSlice({
     name: 'comments',
     initialState,
@@ -55,113 +98,28 @@ export const CommentsSlice = createSlice({
             state.connectionError = action.payload;
         },
         wsMessage: (state, action: PayloadAction<IWsMessage>) => {
-            if (action.payload.message.type === 'new_comment') {
-                const comment = action.payload.message.comment;
-                if (comment.on_comment) {
-                    const parent = state.comments.find((item) => item.id === comment.on_comment);
-                    if (parent) {
-                        state.comments = state.comments.map((item) => {
-                            if (item.id === parent.id) {
-                                item.reply = [...(item.reply || []), comment];
-                            }
-
-                            return item;
-                        });
-                    }
-                } else {
-                    state.comments = [...state.comments, comment];
-                }
-            } else if (action.payload.message.type === 'change_comment') {
-                const updatedComment = action.payload.message.comment;
-
-                if (updatedComment.on_comment) {
-                    // Обновляем ответ на комментарий
-                    const parent = state.comments.find((item) => item.id === updatedComment.on_comment);
-                    if (parent) {
-                        state.comments = state.comments.map((item) => {
-                            if (item.id === parent.id) {
-                                return {
-                                    ...item,
-                                    reply: (item.reply || []).map((replyItem) =>
-                                        replyItem.id === updatedComment.id ? updatedComment : replyItem
-                                    ),
-                                };
-                            }
-                            return item;
-                        });
-                    }
-                } else {
-                    // Обновляем комментарий верхнего уровня
-                    state.comments = state.comments.map((item) =>
-                        item.id === updatedComment.id ? { ...updatedComment, reply: item.reply } : item
-                    );
-                }
-            } else if (action.payload.message.type === 'remove_comment') {
-                const { comment_id, on_comment } = action.payload.message;
-
-                if (on_comment) {
-                    // Удаляем ответ на коммента��ий
-                    const parent = state.comments.find((item) => item.id === on_comment);
-                    if (parent) {
-                        state.comments = state.comments.map((item) => {
-                            if (item.id === parent.id) {
-                                return {
-                                    ...item,
-                                    reply: (item.reply || []).filter((replyItem) => replyItem.id !== comment_id),
-                                };
-                            }
-                            return item;
-                        });
-                    }
-                } else {
-                    // Удаляем комментарий верхнего уровня и все его ответы (каскадное удаление)
-                    state.comments = state.comments
-                        .filter((item) => item.id !== comment_id) // Удаляем сам комментарий
-                        .map((item) => ({
-                            ...item,
-                            reply: (item.reply || []).filter(
-                                (replyItem) => replyItem.on_comment !== comment_id // Удаляем все ответы на удаляемый комментарий
-                            ),
-                        }));
-                }
-            } else if (action.payload.message.type === 'like_comment') {
-                const { comment_id, user_id } = action.payload.message;
-
-                const addLikeRec = (items: IComment[] | undefined): boolean => {
-                    if (!items) return false;
-                    for (const item of items) {
-                        if (item.id === comment_id) {
-                            item.likes = item.likes || [];
-                            if (!item.likes.includes(user_id)) {
-                                item.likes.push(user_id);
-                            }
-                            return true;
-                        }
-                        if (addLikeRec(item.reply)) return true;
-                    }
-                    return false;
-                };
-
-                addLikeRec(state.comments);
-            } else if (action.payload.message.type === 'dislike_comment') {
-                const { comment_id, user_id } = action.payload.message;
-
-                const removeLikeRec = (items: IComment[] | undefined): boolean => {
-                    if (!items) return false;
-                    for (const item of items) {
-                        if (item.id === comment_id) {
-                            if (item.likes && item.likes.length) {
-                                item.likes = item.likes.filter((id) => id !== user_id);
-                            }
-                            return true;
-                        }
-                        if (removeLikeRec(item.reply)) return true;
-                    }
-                    return false;
-                };
-
-                removeLikeRec(state.comments);
+            const message = action.payload.message;
+            if (message.type === 'new_comment' || message.type === 'change_comment') {
+                upsertComment(state.comments, message.comment);
+            } else if (message.type === 'remove_comment') {
+                removeComment(state, message.comment_id, message.on_comment);
+            } else if (message.type === 'like_comment' || message.type === 'dislike_comment') {
+                const item = findComment(state.comments, message.comment_id);
+                if (!item) return;
+                const likes = (item.likes || []).filter((id) => id !== message.user_id);
+                item.likes = message.type === 'like_comment' ? [...likes, message.user_id] : likes;
             }
+        },
+        /** Свой новый/изменённый комментарий из ответа API — не ждём сокет (он потом совпадёт по id). */
+        commentUpserted: (state, action: PayloadAction<IComment>) => {
+            upsertComment(state.comments, action.payload);
+        },
+        commentRemoved: (state, action: PayloadAction<{ comment_id: number, on_comment?: number }>) => {
+            removeComment(state, action.payload.comment_id, action.payload.on_comment);
+        },
+        commentLikesSet: (state, action: PayloadAction<{ id: number, likes: number[] }>) => {
+            const item = findComment(state.comments, action.payload.id);
+            if (item) item.likes = action.payload.likes;
         },
         // wsSend: (state, action: PayloadAction<unknown>) => {
         //     state.socket?.send(JSON.stringify(action.payload));
@@ -217,6 +175,9 @@ export const {
     wsError,
     wsMessage,
     wsOpen,
+    commentUpserted,
+    commentRemoved,
+    commentLikesSet,
     setSelectedComments,
     addSelectedComment,
     removeSelectedComment,

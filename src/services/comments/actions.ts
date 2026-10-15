@@ -1,57 +1,53 @@
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { ApiURL } from "../../core/constants";
-import { addComments, setComments, setCommentsAfterExist } from "./slice";
-import { fetchWithAuthorization } from "../auth/actions";
-import type { AppDispatch } from "../store";
+import { addComments, commentLikesSet, commentRemoved, commentUpserted, setComments, setCommentsAfterExist } from "./slice";
+import { setCommentsListDenied } from "../auth/slice";
+import { api, ApiError, errorText } from "../http";
 
 export const commentsWsConnect = createAction<string, 'FEED_CONNECT'>('FEED_CONNECT');
 
 export const commentsWsDisconnect = createAction('FEED_DISCONNECT');
 
 export type TCommentsFetchProps = {
-    instanceId: string, 
-    dispatchMethod?: 'set' | 'add', 
-    type: string, 
-    signal?: AbortSignal, 
-    limit?: number | 'all', 
-    filters?: {[key: string]: string | number | boolean},
+    instanceId: string,
+    dispatchMethod?: 'set' | 'add',
+    type: string,
+    signal?: AbortSignal,
+    /** более ранние ветки: id первого загруженного верхнего комментария */
+    before?: number,
+    /** якорь ?comment_id: от ветки этого комментария до самых новых */
+    commentId?: number,
 }
 
+/** Список: GET v2comments/<type>/<id>/. Отказ (закрыты, недоступна) — в права, вместо списка. */
 export const CommentsFetch = createAsyncThunk(
     'comments/fetch',
-    async ({ dispatchMethod='set', type = 'post', instanceId, signal, limit, filters }: TCommentsFetchProps, { rejectWithValue, dispatch }) => {
+    async ({ dispatchMethod = 'set', type = 'post', instanceId, signal, before, commentId }: TCommentsFetchProps, { rejectWithValue, dispatch }) => {
         try {
-            const url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
+            const q = new URLSearchParams();
+            if (before) q.set('before', `${before}`);
+            if (commentId) q.set('comment_id', `${commentId}`);
+            const query = q.toString();
 
-            if(limit){
-                url.searchParams.set('limit', `${limit}`);
-            }
+            const data = await api<{ comments: IComment[], after_exist: boolean }>(
+                `v2comments/${type}/${instanceId}/${query ? `?${query}` : ''}`,
+                { signal },
+            );
 
-            if (filters){
-                url.searchParams.set('filters', JSON.stringify(filters));
-            }
-
-            const response = await fetch(url, {
-                signal,
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to fetch comments');
-            }
-
-            const data: { comments: IComment[], after_exist: boolean } = await response.json();
-
-            if  (dispatchMethod === 'set')  dispatch(setComments(data.comments));
+            if (dispatchMethod === 'set') dispatch(setComments(data.comments));
             else if (dispatchMethod === 'add') dispatch(addComments(data.comments));
             dispatch(setCommentsAfterExist(data.after_exist));
 
             return;
         } catch (error) {
-            return rejectWithValue(error);
+            if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+                dispatch(setCommentsListDenied(error.status === 404 ? 'Публикация не найдена.' : error.detail));
+            }
+            return rejectWithValue(errorText(error));
         }
     }
 );
 
+/** Новый комментарий / ответ (POST) или правка (PATCH). Ответ сервера сразу встаёт в список — не ждём сокет. */
 export const CommentsSend = createAsyncThunk(
     'comments/send',
     async ({ instanceId, type = 'post', content, replyTo, editId, images = [] }: {
@@ -61,350 +57,123 @@ export const CommentsSend = createAsyncThunk(
         replyTo?: number;
         editId?: number;
         images?: number[];
-    }, { 
-        rejectWithValue, 
-        // getState,
-        dispatch,
-    }) => {
+    }, { rejectWithValue, dispatch }) => {
         try {
-            let url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
-            if (editId) url = new URL(`${ApiURL}comment/${editId}/`);
+            const body: { content: string, reply_to?: number, images: number[] } = { content, images };
+            if (replyTo && !editId) body.reply_to = replyTo;
 
-            // const state = getState() as { auth: { user: IAuthUser | null } };
-            // const token = state.auth.user?.access || '';
+            const data = editId
+                ? await api<{ comment: IComment }>(`v2comments/comment/${editId}/`, { method: 'PATCH', body })
+                : await api<{ comment: IComment }>(`v2comments/${type}/${instanceId}/`, { method: 'POST', body });
 
-            // if (!token) {
-            //     return rejectWithValue('No auth token');
-            // }
-
-            const bodyData: { content: string, reply_to?: number, edit_id?: number, images: number[] } = { content, images: [] };
-            if (replyTo) bodyData['reply_to'] = replyTo;
-            if (editId) bodyData['edit_id'] = editId;
-            if (images.length) bodyData['images'] = images;
-
-            // const response = await fetch(url, {
-            //     method: editId ? 'PATCH' : 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${token}`,
-            //     },
-            //     body: JSON.stringify(bodyData),
-            // });
-
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: editId ? 'PATCH' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bodyData),
-            })
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to send comment');
-            }
-
+            dispatch(commentUpserted(data.comment));
             return;
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
 export const CommentsRemove = createAsyncThunk(
     'comments/remove',
-    async ({commentId, signal}: {commentId: number, signal?: AbortSignal}, {
-        rejectWithValue, 
-        // getState,
-        dispatch,
-    }) => {
-        try{
-            const url = new URL(`${ApiURL}comment/${commentId}/`);
-
-            // const state = getState() as { auth: { user: IAuthUser | null } };
-            // const token = state.auth.user?.access || '';
-
-            // if (!token) {
-            //     return rejectWithValue('No auth token');
-            // }
-
-            // const response = await fetch(url, {
-            //     method: 'DELETE',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Accept': 'application/json',
-            //         'Authorization': `Bearer ${token}`,
-            //     },
-            //     signal,
-            // });
-
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                signal,
-            })
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to remove comment');
-            }
-
+    async ({ commentId, onComment, signal }: { commentId: number, onComment?: number, signal?: AbortSignal }, { rejectWithValue, dispatch }) => {
+        try {
+            await api(`v2comments/comment/${commentId}/`, { method: 'DELETE', signal });
+            dispatch(commentRemoved({ comment_id: commentId, on_comment: onComment }));
             return;
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
+/** Массовое удаление (модератор). */
 export const CommentsGroupRemove = createAsyncThunk(
     'comments/groupRemove',
-    async ({commentIds, type='post', instanceId, signal}: {commentIds: number[], type?: string, instanceId: string | number, signal?: AbortSignal}, {
-        rejectWithValue, 
-        dispatch,
-    }) => {
-        try{
-            const url = new URL(`${ApiURL}comments/${type}/${instanceId}/`);
-
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({comment_ids: commentIds}),
-                signal,
-            })
-
-            if (!response.ok) {
-                return rejectWithValue('Failed to group remove comments');
-            }
-
+    async ({ commentIds, type = 'post', instanceId, signal }: { commentIds: number[], type?: string, instanceId: string | number, signal?: AbortSignal }, { rejectWithValue }) => {
+        try {
+            await api(`v2comments/${type}/${instanceId}/bulk-delete/`, { method: 'POST', body: { comment_ids: commentIds }, signal });
             return;
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
+/** Лайк: liked — уже стоит → снять (DELETE), иначе поставить (PUT). Повтор безопасен. */
 export const CommentsLike = createAsyncThunk(
     'comments/Like',
-    async ({contentType='comment', objectId, signal}: {contentType?: string, objectId: number, signal?: AbortSignal}, {
-        rejectWithValue, 
-        // getState,
-        dispatch,
-    }) => {
-        try{
-            const url = new URL(`${ApiURL}like/${contentType}/${objectId}/`);
-
-            // const state = getState() as { auth: { user: IAuthUser | null } };
-            // const token = state.auth.user?.access || '';
-
-            // if (!token) {
-            //     return rejectWithValue('No auth token');
-            // }
-
-            // const response = await fetch(url, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Accept': 'application/json',
-            //         'Authorization': `Bearer ${token}`,
-            //     },
-            //     signal,
-            // });
-
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
+    async ({ objectId, liked, signal }: { objectId: number, liked: boolean, signal?: AbortSignal }, { rejectWithValue, dispatch }) => {
+        try {
+            const data = await api<{ liked: boolean, likes: number[] }>(`v2comments/comment/${objectId}/like/`, {
+                method: liked ? 'DELETE' : 'PUT',
                 signal,
-            })
-
-            if (!response.ok) {
-                return rejectWithValue('Failed like comment');
-            }
-
+            });
+            dispatch(commentLikesSet({ id: objectId, likes: data.likes }));
             return;
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
 export const CommentsUserAutocomplete = createAsyncThunk(
     'commens/autocomplete/users',
-    async ({q, signal}: {q: string, signal?: AbortSignal}, {
-        rejectWithValue, 
-        // getState,
-        dispatch,
-    }) => {
-        try{
-            const url = new URL(`${ApiURL}autocomplete/users/?q=${q}`);
-
-            // const state = getState() as { auth: { user: IAuthUser | null } };
-            // const token = state.auth.user?.access || '';
-
-            // if (!token) {
-            //     return rejectWithValue('No auth token');
-            // }
-
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                signal,
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed like comment');
-            }
-
-            const data: {objects: TAutocompleteUser[], more: boolean} = await response.json();
-
-            return data;
+    async ({ q, signal }: { q: string, signal?: AbortSignal }, { rejectWithValue }) => {
+        try {
+            return await api<{ objects: TAutocompleteUser[], more: boolean }>(
+                `v2comments/users/?${new URLSearchParams({ q })}`,
+                { signal },
+            );
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
+/** Мои картинки для вложений, новые сверху. */
 export const CommentsFetchImages = createAsyncThunk(
     'comments/fetchImages',
-    async ({limit=21, lastId, signal}: {limit?: number, lastId?: number, signal?: AbortSignal}, {
-        rejectWithValue, 
-        dispatch, 
-        // getState
-    }) => {
-        try{
-            const url = new URL(`${ApiURL}images/?limit=${limit}`);
-
-            if(lastId){
-                url.searchParams.set('last_id', `${lastId}`);
-            }
-
-            // const state = getState() as { auth: { user: IAuthUser | null } };
-            // const token = state.auth.user?.access || '';
-
-            // if (!token) {
-            //     return rejectWithValue('No auth token');
-            // }
-
-            // const response = await fetch(url, {
-            //     method: 'GET',
-            //     headers: {
-            //         'Accept': 'application/json',
-            //         'Authorization': `Bearer ${token}`,
-            //     },
-            //     signal,
-            // });
-
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                signal,
-            })
-
-            if (!response.ok) {
-                return rejectWithValue('Failed like comment');
-            }
-
-            const data: {images: IAppImage[], more: boolean} = await response.json();
-
-            return data;
+    async ({ limit = 21, lastId, signal }: { limit?: number, lastId?: number, signal?: AbortSignal }, { rejectWithValue }) => {
+        try {
+            const q = new URLSearchParams({ limit: `${limit}` });
+            if (lastId) q.set('last_id', `${lastId}`);
+            return await api<{ images: IAppImage[], more: boolean }>(`v2comments/images/?${q}`, { signal });
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
+/** Жалоба на комментарий — задачей в поддержку (аноним указывает email). */
 export const CommentComplaint = createAsyncThunk(
     'comment/complaint',
-    async ({data, signal}: {data: FormData, signal?: AbortSignal}, {rejectWithValue, getState}) => {
-        try{
-            const url = new URL(`${ApiURL}support/task/`);
-
-            const email = data.get('email');
-
-            const headers: HeadersInit = {
-                'Accept': 'application/json',
-                // 'Content-Type': 'multipart/form-data',
-            }
-
-            if(!email){
-                const state = getState() as { auth: { user: IAuthUser | null } };
-                const token = state.auth.user?.access || '';
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers,
-                signal,
-                body: data,
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed with send support message');
-            }
-
+    async ({ data, signal }: { data: FormData, signal?: AbortSignal }, { rejectWithValue }) => {
+        try {
+            await api('support/task/session/', { method: 'POST', body: data, signal });
             return;
         } catch (err) {
-            return rejectWithValue(err);
+            return rejectWithValue(errorText(err));
         }
     }
 )
 
 export const CommentUpload = createAsyncThunk(
     'comment/upload',
-    async ({files, signal}: {files: File[], signal?: AbortSignal}, {
-        rejectWithValue, 
-        // getState,
-        dispatch,
-    }) => {
-        try{
-            const url = new URL(`${ApiURL}images/`);
-
-            // const state = getState() as { auth: { user: IAuthUser | null } };
-            // const token = state.auth.user?.access || '';
-
-            // if (!token) {
-            //     return rejectWithValue('No auth token');
-            // }
-
+    async ({ files, signal }: { files: File[], signal?: AbortSignal }, { rejectWithValue }) => {
+        try {
             const data = new FormData();
+            files.forEach((file) => data.append(`attach-${crypto.randomUUID()}`, file));
 
-            files.map((file) => {
-                data.append(`attach-${crypto.randomUUID()}`, file);
-            })
+            const response = await api<{ files: [string, IAppImage][], errors: [string, string][] }>(
+                'v2comments/images/',
+                { method: 'POST', body: data, signal },
+            );
 
-            const response = await fetchWithAuthorization(dispatch as AppDispatch, url, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                body: data,
-                signal,
-            });
-
-            if (!response.ok) {
-                return rejectWithValue('Failed with upload images comment');
-            }
-
-            const responseData: {files: [string, IAppImage][], errors: [string, string][]} = await response.json();
-
-            if(!responseData.files.length){
-                return rejectWithValue('Ошибка загрузки');
-            }
-
-            return responseData.files;
-        } catch(err) {
-            return rejectWithValue(err);
+            if (!response.files.length) return rejectWithValue('Ошибка загрузки');
+            return response.files;
+        } catch (err) {
+            return rejectWithValue(errorText(err));
         }
     }
 )

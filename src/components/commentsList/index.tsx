@@ -37,7 +37,7 @@ export const CommentsList: FC = () => {
             instanceId: postId,
             dispatchMethod: 'add',
             type: 'post',
-            filters: { date__lt: comments[0].dt },
+            before: comments[0].id,
         }))
             .finally(() => setPendingMore(false))
     }, [dispatch, commentsAfterExist, postId, comments])
@@ -62,7 +62,8 @@ export const CommentsList: FC = () => {
             }
 
             if(isCommentAnchor){
-                fetchParams.limit = 'all';
+                // от ветки нужного комментария до новых — чтобы до него можно было доскроллить
+                fetchParams.commentId = Number(search.get('comment_id')) || undefined;
             }
 
             try {
@@ -75,20 +76,16 @@ export const CommentsList: FC = () => {
                                 const elem = document.getElementById(`comment-${commentId}`);
 
                                 if(elem){
-                                    const rect = elem.getBoundingClientRect();
-                                    const top = rect.top;
-                                    window.scrollTo(0, top);
+                                    // от документа, а не от окна: rect.top + scrollTo работал,
+                                    // только если страница стояла в самом верху
+                                    elem.scrollIntoView({ block: 'center' });
                                 } else {
                                     console.error('Comment does not exist');
                                 }
                             }, 300)
                         }else if (isCommentsListAnchor) {
                             setTimeout(() => {
-                                if(listRef.current){
-                                    const rect = listRef.current.getBoundingClientRect();
-                                    const top = rect.top;
-                                    window.scrollTo(0, top);
-                                }
+                                listRef.current?.scrollIntoView({ block: 'start' });
                             }, 300)
                         }
                     })
@@ -99,7 +96,8 @@ export const CommentsList: FC = () => {
 
                 setPending(false);
             } catch (error) {
-                console.error(error);
+                // отмена при размонтировании (и двойной эффект StrictMode в dev) — не ошибка
+                if (!signal.aborted) console.error(error);
                 if (isMounted) {
                     setPending(false);
                 }

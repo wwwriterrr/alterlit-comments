@@ -1,0 +1,11 @@
+.badge {
+    flex: none;
+    width: 0.95em;
+    height: 0.95em;
+    /* цвета одинаковые с чатом и блоком пользователя */
+    fill: #3b6ef3;
+}
+
+.badge[data-kind='owner'] {
+    fill: #d50000;
+}

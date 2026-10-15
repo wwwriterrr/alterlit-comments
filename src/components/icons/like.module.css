@@ -1,0 +1,37 @@
+.heart {
+    /* при «пульсе» сердце выходит за свою кнопку — поверх соседей и без обрезки */
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+}
+
+.heart path {
+    fill: #dfd9c2;
+    transition: fill 0.2s ease-out;
+}
+
+.heart[data-liked] path {
+    fill: #d78778;
+}
+
+.heart[data-pulse] {
+    animation: pulse 0.4s ease-out;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(1.7);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heart[data-pulse] {
+        animation: none;
+    }
+}

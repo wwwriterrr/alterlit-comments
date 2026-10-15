@@ -1,6 +1,4 @@
 import {
-    // lazy, 
-    // Suspense, 
     useCallback, useEffect, useMemo, useState, type FC,
     type MouseEventHandler
 } from 'react';
@@ -15,15 +13,15 @@ import { ReplyIcon } from '../icons/reply';
 import { ComplaintIcon } from '../icons/complaint';
 import { EditIcon } from '../icons/edit';
 import { TrashIcon } from '../icons/trash';
-import { CommentForm } from '../forms/newComment';
+import { LazyCommentForm as CommentForm } from '../forms/newComment/lazy';
 import { CommentsLike, CommentsRemove } from '../../services/comments/actions';
 import { openModal } from '../../services/modal/slice';
-import { SupportModal } from '../modals/support';
+import { LazySupportModal as SupportModal } from '../modals/support/lazy';
 import { openViewer } from '../../services/viewer/slice';
 import { getSelectedComments, toggleSelectedComment } from '../../services/comments/slice';
-// import { CommentFormSkeleton } from '../skeletons/commentForm';
+import { AdminBadge } from '../adminBadge';
+import { formatCommentDate, formatFullDate } from '../../core/date';
 
-// const CommentForm = lazy(() => import('../../components/forms/newComment').then(mod => ({ default: mod.CommentForm })));
 
 const DELTA = 5 * 60 * 1000;
 
@@ -106,32 +104,13 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
     const editedOpacity = useMemo(() => (showEditForm && isShowEditBtns ? 0.3 : undefined), [showEditForm, isShowEditBtns]);
 
-    const dt = useMemo(
-        () => {
-            return new Date(`${comment.dt}+03:00`).toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-            })
-        },
-        [comment.dt]
-    );
+    // как в сообщениях: сегодня — время, вчера — «вчера, 14:05», раньше — дата и время
+    const dt = useMemo(() => formatCommentDate(comment.dt), [comment.dt]);
+    const dtFull = useMemo(() => formatFullDate(comment.dt), [comment.dt]);
 
     const dtModified = useMemo(
-        () => {
-            if (!comment.dt_modified) return null;
-
-            return new Date(`${comment.dt_modified}+03:00`).toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-            })
-        },
-        [comment]
+        () => (comment.dt_modified ? formatCommentDate(comment.dt_modified) : null),
+        [comment.dt_modified]
     );
 
     const handleReply = useCallback(() => {
@@ -151,14 +130,14 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
 
         if (res) {
             setRemovePending(true);
-            dispatch(CommentsRemove({ commentId: comment.id }))
+            dispatch(CommentsRemove({ commentId: comment.id, onComment: comment.on_comment }))
                 .finally(() => setRemovePending(false));
         }
-    }, [comment.id, comment.reply, dispatch])
+    }, [comment.id, comment.on_comment, comment.reply, dispatch])
 
     const handleLike = useCallback(() => {
-        dispatch(CommentsLike({ contentType: 'comment', objectId: comment.id }));
-    }, [comment.id, dispatch])
+        dispatch(CommentsLike({ objectId: comment.id, liked: Boolean(liked) }));
+    }, [comment.id, liked, dispatch])
 
     const handleCompliant = useCallback(() => {
         dispatch(openModal({ content: (<SupportModal commentId={comment.id} />) }));
@@ -217,11 +196,14 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                                 href={`/profile/${comment.author.username}/`}
                                 target="_blank"
                             >
-                                {comment.author.name}
+                                <span className={styles.comment__user__name}>{comment.author.name}</span>
+                                <AdminBadge user={comment.author} />
                             </a>
                         </div>
                         <div className={styles.comment__dt}>
-                            <a href={`${location.pathname}?anchor=comments&comment_id=${comment.id}`} target="_blank">{dt}</a>
+                            <a href={`${location.pathname}?anchor=comments&comment_id=${comment.id}`} target="_blank" title={dtFull}>
+                                <time dateTime={`${comment.dt}`}>{dt}</time>
+                            </a>
                         </div>
                     </div>
                     {comment.images?.length ? (
@@ -307,7 +289,7 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     </div>
                     {dtModified ? (
                         <div className={styles.comment__modified}>
-                            {`Изм: ${dtModified}`}
+                            {`изменено ${dtModified}`}
                         </div>
                     ) : null}
                     {comment.reply && comment.reply.length ? (
@@ -318,7 +300,6 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                 </div>
             </div>
             {showReplyForm && isShowReply ? (
-                // <Suspense fallback={<CommentFormSkeleton />}>
                 <CommentForm
                     replyTo={comment.on_comment ? comment.on_comment : comment.id}
                     onSuccess={() => { setShowReplyForm(false); setShowReply(true) }}
@@ -337,10 +318,8 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                         }, 200)
                     }}
                 />
-                // </Suspense>
             ) : null}
             {showEditForm && isShowEditBtns ? (
-                // <Suspense fallback={<CommentFormSkeleton />}>
                 <CommentForm
                     editId={comment.id}
                     style={{
@@ -350,16 +329,13 @@ export const Comment: FC<{ comment: IComment }> = ({ comment }) => {
                     initialValue={comment.content}
                     initialAttach={comment.images}
                 />
-                // </Suspense>
             ) : null}
             {comment.reply && comment.reply.length && showReply ? (
                 <>
                     {comment.reply?.map((item) => (
-                        // <Suspense fallback={<CommentFormSkeleton />}>
                         <Comment
                             comment={item} key={`comment_${comment.id}-${item.id}`}
                         />
-                        // </Suspense>
                     ))}
                 </>
             ) : null}

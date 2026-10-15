@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { AuthCheckUser } from './actions';
+import { AuthCheckUser, CommentsFetchPerms } from './actions';
 
 interface IInitialState {
     perms: TCommentsPerms,
@@ -9,11 +9,12 @@ interface IInitialState {
 }
 
 const initialState: IInitialState = {
+    // читать можно, пока список не ответил иначе; писать — пока не пришли права
     perms: {
-        comments_list: false,
-        comments_list_detail: 'Непредвиденная ошибка',  
+        comments_list: true,
+        comments_list_detail: '',
         comments_send: false,
-        comments_send_detail: 'Непредвиденная ошибка',
+        comments_send_detail: '',
     },
     permsChecked: false,
     user: null,
@@ -30,12 +31,10 @@ const AuthSlice = createSlice({
         setUser: (state, action: PayloadAction<IAuthUser>) => {
             state.user = action.payload;
         },
-        setAuthCredentials: (state, action: PayloadAction<{ access: string, refresh: string }>) => {
-            if(state.user){
-                const { access, refresh } = action.payload;
-                state.user.access = access;
-                state.user.refresh = refresh;
-            }
+        /** Список комментариев ответил отказом (закрыты, публикация недоступна). */
+        setCommentsListDenied: (state, action: PayloadAction<string>) => {
+            state.perms.comments_list = false;
+            state.perms.comments_list_detail = action.payload;
         },
         logout: (state) => {
             state.user = null;
@@ -43,8 +42,6 @@ const AuthSlice = createSlice({
     },
     selectors: {
         getAuthChecked: state => state.authChecked,
-        getAccessToken: state => state.user?.access,
-        getRefreshToken: state => state.user?.refresh,
         getUser: state => state.user,
         getCommentsPerms: state => state.perms,
         getCommentsPermsChecked: state => state.permsChecked,
@@ -55,13 +52,32 @@ const AuthSlice = createSlice({
                 state.permsChecked = false;
                 state.authChecked = false;
             })
-            .addCase(AuthCheckUser.fulfilled, (state) => {
-                state.permsChecked = true;
+            .addCase(AuthCheckUser.fulfilled, (state, action) => {
+                state.user = action.payload;
                 state.authChecked = true;
+                if (!action.payload) {
+                    // аноним: права не запрашиваем — сразу «войдите»
+                    state.perms.comments_send = false;
+                    state.perms.comments_send_detail = 'Чтобы оставлять комментарии, войдите на сайт.';
+                    state.permsChecked = true;
+                }
             })
             .addCase(AuthCheckUser.rejected, (state) => {
-                state.permsChecked = true;
                 state.authChecked = true;
+                state.permsChecked = true;
+                state.perms.comments_send = false;
+                state.perms.comments_send_detail = 'Не удалось проверить вход на сайт. Обновите страницу.';
+            })
+            .addCase(CommentsFetchPerms.fulfilled, (state, action) => {
+                state.perms.comments_send = action.payload.can_send;
+                state.perms.comments_send_detail = action.payload.send_reason || '';
+                if (state.user) state.user.perms = action.payload.is_moderator ? ['admin'] : [];
+                state.permsChecked = true;
+            })
+            .addCase(CommentsFetchPerms.rejected, (state, action) => {
+                state.perms.comments_send = false;
+                state.perms.comments_send_detail = action.payload || 'Не удалось проверить права на комментарии.';
+                state.permsChecked = true;
             })
     }
 });
@@ -69,15 +85,13 @@ const AuthSlice = createSlice({
 export const {
     setCommentsPerms,
     setUser,
-    setAuthCredentials,
+    setCommentsListDenied,
     logout
 } = AuthSlice.actions;
 
 export const {
     getCommentsPerms,
     getCommentsPermsChecked,
-    getAccessToken,
-    getRefreshToken,
     getUser,
     getAuthChecked,
 } = AuthSlice.selectors;

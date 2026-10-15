@@ -8,8 +8,10 @@ declare global {
 
     interface IAuthUser {
         id: number;
-        access: string;
-        refresh: string;
+        username: string;
+        name: string;
+        avatar: string | null;
+        /** 'admin' — модератор комментариев (is_staff) */
         perms: string[];
     }
 
